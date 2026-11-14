@@ -21,6 +21,9 @@ export default function UploadMilestonePage() {
   const [roomId, setRoomId] = useState('')
   const [stage, setStage] = useState('Painting & Decorating')
   const [caption, setCaption] = useState('')
+  
+  // Collapsible optional details toggle
+  const [showExtra, setShowExtra] = useState(false)
   const [specsInput, setSpecsInput] = useState('')
   const [cost, setCost] = useState('')
   const [contractor, setContractor] = useState('')
@@ -129,7 +132,7 @@ export default function UploadMilestonePage() {
         <h1 className="text-lg font-semibold text-[#F2EFE9]">Log Renovation Milestone</h1>
       </div>
 
-      {/* Mode Switcher: Permanent Logbook Entry vs 24h Progress Story */}
+      {/* Mode Switcher */}
       <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-[#1E221E] border border-[#2E332E]">
         <button
           type="button"
@@ -228,51 +231,64 @@ export default function UploadMilestonePage() {
           />
         </div>
 
+        {/* Collapsible Optional Details Toggle */}
         {postMode === 'grid' && (
-          <>
-            <div>
-              <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">
-                Materials, Paints & Specs (comma-separated)
-              </label>
-              <input
-                type="text"
-                placeholder="e.g., Farrow & Ball Ammonite, Oak Herringbone, Mapei Silicone"
-                value={specsInput}
-                onChange={(e) => setSpecsInput(e.target.value)}
-                className="w-full px-3.5 py-2.5 text-xs bg-[#1E221E] text-[#F2EFE9] placeholder-[#6B6962] border border-[#2E332E] rounded-xl focus:outline-none focus:border-[#8FA680]"
-              />
-            </div>
+          <div className="space-y-3 pt-1">
+            <button
+              type="button"
+              onClick={() => setShowExtra(!showExtra)}
+              className="text-xs font-semibold text-[#8FA680] hover:underline flex items-center gap-1.5"
+            >
+              <span>{showExtra ? '▾ Hide Additional Specs, Cost & Contractor' : '▸ Add Materials, Cost & Contractor (Optional)'}</span>
+            </button>
 
-            <div className="grid grid-cols-2 gap-2.5">
-              <div>
-                <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">
-                  Cost (£ optional)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="e.g., 240"
-                  value={cost}
-                  onChange={(e) => setCost(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-[#1E221E] text-[#F2EFE9] placeholder-[#6B6962] border border-[#2E332E] rounded-xl focus:outline-none focus:border-[#8FA680]"
-                />
-              </div>
+            {showExtra && (
+              <div className="space-y-3 p-3.5 rounded-2xl bg-[#1E221E] border border-[#2E332E]">
+                <div>
+                  <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">
+                    Materials, Paints & Specs (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Farrow & Ball Ammonite, Oak Herringbone"
+                    value={specsInput}
+                    onChange={(e) => setSpecsInput(e.target.value)}
+                    className="w-full px-3.5 py-2.5 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl focus:outline-none focus:border-[#8FA680]"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">
-                  Done By (optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., DIY, Electrician"
-                  value={contractor}
-                  onChange={(e) => setContractor(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-[#1E221E] text-[#F2EFE9] placeholder-[#6B6962] border border-[#2E332E] rounded-xl focus:outline-none focus:border-[#8FA680]"
-                />
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">
+                      Cost (£ optional)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="e.g., 240"
+                      value={cost}
+                      onChange={(e) => setCost(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl focus:outline-none focus:border-[#8FA680]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">
+                      Done By (optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g., DIY, Electrician"
+                      value={contractor}
+                      onChange={(e) => setContractor(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl focus:outline-none focus:border-[#8FA680]"
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
-          </>
+            )}
+          </div>
         )}
 
         <button
