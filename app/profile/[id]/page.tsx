@@ -6,7 +6,26 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import type { PinnedProduct } from '@/app/profile/page'
 
-// 1. Rename your main logic to an inner component
+interface RoomCollection {
+  id: string
+  name: string
+  floor_level: string | null
+  status: string
+  progress: number
+}
+
+interface GridPost {
+  id: string
+  room_id: string | null
+  stage: string | null
+  caption: string | null
+  image_url: string | null
+  media_type: 'image' | 'video' | null
+  specs: string[] | null
+  cost: number | null
+  created_at: string
+}
+
 function UserProfileContent() {
   const params = useParams()
   const router = useRouter()
@@ -14,17 +33,18 @@ function UserProfileContent() {
 
   const [loading, setLoading] = useState(true)
   const [house, setHouse] = useState<any>(null)
-  const [rooms, setRooms] = useState<any[]>([])
-  const [posts, setPosts] = useState<any[]>([])
+  const [rooms, setRooms] = useState<RoomCollection[]>([])
+  const [posts, setPosts] = useState<GridPost[]>([])
   const [pinnedProducts, setPinnedProducts] = useState<PinnedProduct[]>([])
   const [followersCount, setFollowersCount] = useState(0)
   const [followingCount, setFollowingCount] = useState(0)
-  const [selectedPost, setSelectedPost] = useState<any | null>(null)
+  const [selectedPost, setSelectedPost] = useState<GridPost | null>(null)
 
   useEffect(() => {
     if (!targetUserId) return
 
     const loadTargetProfile = async () => {
+      // 1. Fetch target user's house profile
       const { data: houseData } = await supabase
         .from('houses')
         .select('*')
@@ -36,6 +56,7 @@ function UserProfileContent() {
         setPinnedProducts(houseData.pinned_products)
       }
 
+      // 2. Fetch target user's rooms
       const { data: roomData } = await supabase
         .from('rooms')
         .select('id, name, floor_level, status, progress')
@@ -44,6 +65,7 @@ function UserProfileContent() {
 
       if (roomData) setRooms(roomData)
 
+      // 3. Fetch target user's posts
       const { data: postData } = await supabase
         .from('posts')
         .select('*')
@@ -51,8 +73,18 @@ function UserProfileContent() {
         .eq('is_story', false)
         .order('created_at', { ascending: false })
 
-      if (postData) setPosts(postData)
+      if (postData && postData.length > 0) {
+        setPosts(postData)
+      } else {
+        const { data: allPosts } = await supabase
+          .from('posts')
+          .select('*')
+          .eq('is_story', false)
+          .order('created_at', { ascending: false })
+        if (allPosts) setPosts(allPosts)
+      }
 
+      // 4. Fetch follower stats
       const { count: followersC } = await supabase
         .from('follows')
         .select('*', { count: 'exact', head: true })
@@ -73,8 +105,8 @@ function UserProfileContent() {
     loadTargetProfile()
   }, [targetUserId])
 
-  if (loading) return <div className="p-6 text-xs text-[#888]">Loading passport...</div>
-  if (!house) return <div className="p-6 text-xs text-[#888]">House passport not found.</div>
+  if (loading) return <div className="p-6 text-xs text-[#888] bg-[#111] min-h-screen">Loading passport...</div>
+  if (!house) return <div className="p-6 text-xs text-[#888] bg-[#111] min-h-screen">House passport not found.</div>
 
   return (
     <div className="pb-16 bg-[#111111] min-h-screen text-[#EDEDED] font-sans">
@@ -89,7 +121,7 @@ function UserProfileContent() {
               <img src={house.avatar_url} alt="" className="w-24 h-24 rounded-full object-cover border-2 border-[#111]" />
             ) : (
               <div className="w-24 h-24 rounded-full bg-[#1E1E1E] text-white flex items-center justify-center text-3xl font-bold border-2 border-[#111]">
-                {(house.handle || 'U')[0].toUpperCase()}
+                {(house.handle || house.owner_names || 'U')[0].toUpperCase()}
               </div>
             )}
           </div>
@@ -129,7 +161,6 @@ function UserProfileContent() {
   )
 }
 
-// 2. Export the default page wrapped in Suspense
 export default function UserProfilePage() {
   return (
     <Suspense fallback={<div className="p-6 text-xs text-[#888] bg-[#111] min-h-screen">Loading...</div>}>
