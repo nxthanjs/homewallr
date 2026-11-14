@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -40,18 +40,45 @@ function UserProfileContent() {
   const [followingCount, setFollowingCount] = useState(0)
   const [selectedPost, setSelectedPost] = useState<GridPost | null>(null)
 
-  // Follow Back States
+  // Follow & Action States
   const [currentAuthUser, setCurrentAuthUser] = useState<any>(null)
+  const [currentUserHandle, setCurrentUserHandle] = useState<string>('homeowner')
   const [theyFollowMe, setTheyFollowMe] = useState(false)
   const [iFollowThem, setIFollowThem] = useState(false)
   const [followLoading, setFollowLoading] = useState(false)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   useEffect(() => {
     if (!targetUserId) return
 
     const loadTargetProfile = async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser()
-      if (authUser) setCurrentAuthUser(authUser)
+      if (authUser) {
+        setCurrentAuthUser(authUser)
+
+        // Fetch current user's handle for notifications
+        const { data: myHouse } = await supabase
+          .from('houses')
+          .select('handle')
+          .eq('user_id', authUser.id)
+          .maybeSingle()
+
+        if (myHouse?.handle) {
+          setCurrentUserHandle(myHouse.handle)
+        }
+      }
 
       if (authUser && targetUserId) {
         // Check if they follow you
@@ -140,7 +167,7 @@ function UserProfileContent() {
     if (!currentAuthUser || !targetUserId) return
     setFollowLoading(true)
 
-    const { error } = await supabase.from('follows').insert([
+    const { error: followError } = await supabase.from('follows').insert([
       {
         follower_id: currentAuthUser.id,
         following_id: targetUserId,
@@ -148,12 +175,68 @@ function UserProfileContent() {
       },
     ])
 
+    if (!followError) {
+      await supabase.from('notifications').insert([
+        {
+          user_id: targetUserId,
+          actor_id: currentAuthUser.id,
+          actor_handle: currentUserHandle,
+          type: 'follow',
+        },
+      ])
+
+      setIFollowThem(true)
+      setFollowersCount((prev) => prev + 1)
+    } else {
+      alert('Error following user: ' + followError.message)
+    }
+
+    setFollowLoading(false)
+  }
+
+  const handleUnfollow = async () => {
+    if (!currentAuthUser || !targetUserId) return
+    setFollowLoading(true)
+    setShowDropdown(false)
+
+    const { error } = await supabase
+      .from('follows')
+      .delete()
+      .eq('follower_id', currentAuthUser.id)
+      .eq('following_id', targetUserId)
+
     setFollowLoading(false)
     if (!error) {
-      setIFollowThem(true)
+      setIFollowThem(false)
+      setFollowersCount((prev) => Math.max(0, prev - 1))
     } else {
-      alert('Error following user: ' + error.message)
+      alert('Error unfollowing user: ' + error.message)
     }
+  }
+
+  const handleBlockUser = async () => {
+    if (!currentAuthUser || !targetUserId) return
+    if (!confirm('Are you sure you want to block this user? This will also remove them from your followers.')) return
+    
+    setFollowLoading(true)
+    setShowDropdown(false)
+
+    // 1. Insert into blocked_users
+    await supabase.from('blocked_users').insert([
+      {
+        blocker_id: currentAuthUser.id,
+        blocked_id: targetUserId,
+      },
+    ])
+
+    // 2. Remove any follow relationships between both users
+    await supabase
+      .from('follows')
+      .delete()
+      .or(`and(follower_id.eq.${currentAuthUser.id},following_id.eq.${targetUserId}),and(follower_id.eq.${targetUserId},following_id.eq.${currentAuthUser.id})`)
+
+    setFollowLoading(false)
+    router.push('/feed')
   }
 
   if (loading) return <div className="p-6 text-xs text-[#888] bg-[#111] min-h-screen">Loading passport...</div>
@@ -186,10 +269,10 @@ function UserProfileContent() {
             </div>
           </div>
 
-          {/* Follow Back Button / Status */}
+          {/* Follow Actions & Menu */}
           {currentAuthUser && currentAuthUser.id !== targetUserId && (
-            <div className="shrink-0">
-              {theyFollowMe && !iFollowThem && (
+            <div className="shrink-0 relative" ref={dropdownRef}>
+              {theyFollowMe && !iFollowThem ? (
                 <button
                   type="button"
                   onClick={handleFollowBack}
@@ -198,11 +281,46 @@ function UserProfileContent() {
                 >
                   {followLoading ? 'Following...' : 'Follow Back'}
                 </button>
-              )}
-              {iFollowThem && (
-                <span className="px-4 py-2 rounded-full bg-[#222] text-[#AAA] text-xs font-semibold border border-[#333]">
-                  Following
-                </span>
+              ) : iFollowThem ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowDropdown(!showDropdown)}
+                    className="px-4 py-2 rounded-full bg-[#222] hover:bg-[#2A2A2A] text-[#AAA] hover:text-white text-xs font-semibold border border-[#333] transition-colors"
+                  >
+                    Following ▾
+                  </button>
+
+                  {showDropdown && (
+                    <div className="absolute right-0 mt-2 w-36 rounded-xl bg-[#1A1A1A] border border-[#333] shadow-xl py-1 z-50">
+                      <button
+                        type="button"
+                        onClick={handleUnfollow}
+                        disabled={followLoading}
+                        className="w-full text-left px-4 py-2 text-xs text-[#CCC] hover:bg-[#262626] hover:text-white transition-colors"
+                      >
+                        Unfollow
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleBlockUser}
+                        disabled={followLoading}
+                        className="w-full text-left px-4 py-2 text-xs text-red-400 hover:bg-red-950/40 transition-colors"
+                      >
+                        Block Account
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleFollowBack}
+                  disabled={followLoading}
+                  className="px-4 py-2 rounded-full bg-white hover:bg-neutral-200 text-black text-xs font-bold transition-colors shadow-sm"
+                >
+                  {followLoading ? 'Following...' : 'Follow'}
+                </button>
               )}
             </div>
           )}
