@@ -1,11 +1,13 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+
+export function generateStaticParams() {
+  return []
+}
 
 interface RoomDetail {
   id: string
@@ -43,6 +45,8 @@ export default function RoomDetailPage() {
   const [status, setStatus] = useState('Planning')
 
   useEffect(() => {
+    if (!roomId || roomId === '[id]') return
+
     const loadRoom = async () => {
       const { data: auth } = await supabase.auth.getUser()
       if (!auth.user) return router.push('/login')
@@ -70,7 +74,7 @@ export default function RoomDetailPage() {
       setLoading(false)
     }
 
-    if (roomId) loadRoom()
+    loadRoom()
   }, [roomId, router])
 
   const handleSaveRoomProgress = async () => {
