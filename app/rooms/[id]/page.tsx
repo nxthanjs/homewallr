@@ -5,10 +5,6 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
-export function generateStaticParams() {
-  return []
-}
-
 interface RoomDetail {
   id: string
   name: string
