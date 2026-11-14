@@ -40,14 +40,12 @@ export default function LoginPage() {
       setMessage({ text: error.message, isError: true })
     } else {
       if (isSignUp) {
-        setMessage({
-          text: 'Account created! If email confirmation is enabled in Supabase, check your inbox (or turn off email confirmation in Supabase Auth settings for instant local testing).',
-          isError: false,
-        })
+        // Redirect new signups straight to the onboarding setup page
+        router.push('/onboarding')
       } else {
         router.push('/feed')
-        router.refresh()
       }
+      router.refresh()
     }
   }
 
