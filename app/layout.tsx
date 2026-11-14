@@ -31,7 +31,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className="bg-[#0E100E] text-[#F2EFE9] antialiased">
         <FloorPlanProvider>
-          <div className="max-w-md mx-auto min-h-screen bg-[#151815] border-x border-[#262B26] shadow-2xl relative pb-24">
+          <div className="w-full sm:max-w-md sm:mx-auto min-h-screen bg-[#151815] sm:border-x sm:border-[#262B26] shadow-2xl relative pb-24">
             {/* Top Dark Architectural Header */}
             <header className="sticky top-0 z-30 bg-[#181C18]/95 backdrop-blur-md border-b border-[#2A302A] px-5 py-3.5 flex items-center justify-between">
               <Link href="/" className="flex items-center gap-2.5 group">
