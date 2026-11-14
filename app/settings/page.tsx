@@ -22,6 +22,11 @@ export default function SettingsHubPage() {
   const [savingPrivacy, setSavingPrivacy] = useState(false)
   const [privacyMsg, setPrivacyMsg] = useState<string | null>(null)
 
+  // Handle State
+  const [handle, setHandle] = useState('')
+  const [savingHandle, setSavingHandle] = useState(false)
+  const [handleMsg, setHandleMsg] = useState<{ text: string; isError: boolean } | null>(null)
+
   // Blocked Accounts State
   const [blockedList, setBlockedList] = useState<BlockedRecord[]>([])
   const [blockError, setBlockError] = useState<string | null>(null)
@@ -38,15 +43,20 @@ export default function SettingsHubPage() {
       if (!auth.user) return router.push('/login')
       setUser(auth.user)
 
-      // Fetch House Privacy
+      // Fetch House Privacy & Handle
       const { data: house } = await supabase
         .from('houses')
-        .select('is_private')
+        .select('is_private, handle')
         .eq('user_id', auth.user.id)
         .maybeSingle()
 
-      if (house && typeof house.is_private === 'boolean') {
-        setIsPrivate(house.is_private)
+      if (house) {
+        if (typeof house.is_private === 'boolean') {
+          setIsPrivate(house.is_private)
+        }
+        if (house.handle) {
+          setHandle(house.handle)
+        }
       }
 
       // Fetch Blocked Accounts
@@ -78,6 +88,28 @@ export default function SettingsHubPage() {
     } else {
       setPrivacyMsg('Privacy settings updated successfully.')
       setTimeout(() => setPrivacyMsg(null), 3000)
+    }
+  }
+
+  const handleUpdateHandle = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user) return
+    setSavingHandle(true)
+    setHandleMsg(null)
+
+    const cleanHandle = handle.trim().replace(/^@/, '')
+
+    const { error } = await supabase
+      .from('houses')
+      .upsert({ user_id: user.id, handle: cleanHandle }, { onConflict: 'user_id' })
+
+    setSavingHandle(false)
+    if (error) {
+      setHandleMsg({ text: 'Failed to update handle: ' + error.message, isError: true })
+    } else {
+      setHandle(cleanHandle)
+      setHandleMsg({ text: 'Handle updated successfully.', isError: false })
+      setTimeout(() => setHandleMsg(null), 3000)
     }
   }
 
@@ -203,7 +235,37 @@ export default function SettingsHubPage() {
           </Link>
         </div>
 
-        {/* 2. Privacy & Social Settings */}
+        {/* 2. Your Handle Settings */}
+        <div className="rounded-2xl bg-[#181818] border border-[#262626] p-4 space-y-3.5 shadow-sm">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#888]">Your Handle</h2>
+          <form onSubmit={handleUpdateHandle} className="space-y-3">
+            <div className="flex items-center gap-2 bg-[#111] border border-[#262626] rounded-xl px-3 py-2">
+              <span className="text-xs text-[#888]">@</span>
+              <input
+                type="text"
+                required
+                value={handle}
+                onChange={(e) => setHandle(e.target.value)}
+                placeholder="username"
+                className="w-full bg-transparent text-xs text-white focus:outline-none"
+              />
+            </div>
+            {handleMsg && (
+              <p className={`text-[11px] font-medium ${handleMsg.isError ? 'text-red-400' : 'text-cyan-400'}`}>
+                {handleMsg.text}
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={savingHandle}
+              className="px-4 py-2 bg-white hover:bg-[#E0E0E0] text-black text-xs font-semibold rounded-xl transition-colors"
+            >
+              {savingHandle ? 'Saving...' : 'Update Handle'}
+            </button>
+          </form>
+        </div>
+
+        {/* 3. Privacy & Social Settings */}
         <div className="rounded-2xl bg-[#181818] border border-[#262626] p-4 space-y-3.5 shadow-sm">
           <div className="flex items-center justify-between border-b border-[#222] pb-2.5">
             <div>
@@ -231,7 +293,7 @@ export default function SettingsHubPage() {
           )}
         </div>
 
-        {/* 3. Blocked Accounts Manager with 24h Cooldown */}
+        {/* 4. Blocked Accounts Manager with 24h Cooldown */}
         <div className="rounded-2xl bg-[#181818] border border-[#262626] p-4 space-y-3 shadow-sm">
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#888]">Blocked Accounts</h2>
           <p className="text-[11px] text-[#888] leading-relaxed">
@@ -279,7 +341,7 @@ export default function SettingsHubPage() {
           )}
         </div>
 
-        {/* 4. Account Security (Strong Password) */}
+        {/* 5. Account Security (Strong Password) */}
         <div className="rounded-2xl bg-[#181818] border border-[#262626] p-4 space-y-3.5 shadow-sm">
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#888]">Account Security</h2>
           <form onSubmit={handleChangePassword} className="space-y-3">
@@ -323,7 +385,7 @@ export default function SettingsHubPage() {
           </form>
         </div>
 
-        {/* 5. Sign Out */}
+        {/* 6. Sign Out */}
         <div className="pt-2">
           <button
             type="button"
