@@ -45,7 +45,6 @@ export default function CommunityFeedPage() {
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({})
 
   const fetchFeed = async (currentUser: User) => {
-    // Fetch real posts from Supabase
     const { data: postData } = await supabase
       .from('posts')
       .select('*')
@@ -54,7 +53,6 @@ export default function CommunityFeedPage() {
 
     const realPosts: FeedPost[] = await Promise.all(
       (postData || []).map(async (p) => {
-        // Fetch author house handle & avatar
         const { data: houseData } = await supabase
           .from('houses')
           .select('handle, avatar_url')
@@ -64,7 +62,6 @@ export default function CommunityFeedPage() {
         const authorHandle = houseData?.handle || (p.user_id === currentUser.id ? currentUser.email?.split('@')[0] : 'homeowner')
         const authorAvatar = houseData?.avatar_url || undefined
 
-        // Fetch likes count & user like status
         const { count: likesCount } = await supabase
           .from('post_likes')
           .select('*', { count: 'exact', head: true })
@@ -77,7 +74,6 @@ export default function CommunityFeedPage() {
           .eq('user_id', currentUser.id)
           .maybeSingle()
 
-        // Fetch user save status
         const { data: userSave } = await supabase
           .from('saved_posts')
           .select('id')
@@ -85,7 +81,6 @@ export default function CommunityFeedPage() {
           .eq('user_id', currentUser.id)
           .maybeSingle()
 
-        // Fetch comments
         const { data: commentsData } = await supabase
           .from('post_comments')
           .select('*')
@@ -114,7 +109,6 @@ export default function CommunityFeedPage() {
       if (!auth.user) return router.push('/login')
       setUser(auth.user)
 
-      // Fetch following IDs
       const { data: followsData } = await supabase
         .from('follows')
         .select('following_id')
@@ -145,9 +139,15 @@ export default function CommunityFeedPage() {
 
     if (newLikedState) {
       const { error } = await supabase.from('post_likes').insert([{ post_id: postId, user_id: user.id }])
-      if (error) console.error('Error liking post:', error.message)
+      if (error) {
+        alert('Error liking post: ' + error.message)
+        // Revert UI on failure
+        setPosts((prev) =>
+          prev.map((p) => (p.id === postId ? { ...p, is_liked: isCurrentlyLiked, likes_count: post.likes_count } : p))
+        )
+        return
+      }
 
-      // Send notification if liking someone else's post
       if (postOwnerId !== user.id) {
         await supabase.from('notifications').insert([
           {
@@ -160,7 +160,10 @@ export default function CommunityFeedPage() {
         ])
       }
     } else {
-      await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user.id)
+      const { error } = await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user.id)
+      if (error) {
+        alert('Error unliking post: ' + error.message)
+      }
     }
   }
 
@@ -172,15 +175,16 @@ export default function CommunityFeedPage() {
     const isCurrentlySaved = post.is_saved
     const newSavedState = !isCurrentlySaved
 
-    // Optimistic UI update
     setPosts((prev) =>
       prev.map((p) => (p.id === postId ? { ...p, is_saved: newSavedState } : p))
     )
 
     if (newSavedState) {
-      await supabase.from('saved_posts').insert([{ post_id: postId, user_id: user.id }])
+      const { error } = await supabase.from('saved_posts').insert([{ post_id: postId, user_id: user.id }])
+      if (error) alert('Error saving post: ' + error.message)
     } else {
-      await supabase.from('saved_posts').delete().eq('post_id', postId).eq('user_id', user.id)
+      const { error } = await supabase.from('saved_posts').delete().eq('post_id', postId).eq('user_id', user.id)
+      if (error) alert('Error unsaving post: ' + error.message)
     }
   }
 
@@ -189,7 +193,6 @@ export default function CommunityFeedPage() {
     const text = commentInputs[postId]?.trim()
     if (!text || !user) return
 
-    // Fetch current user handle
     const { data: myHouse } = await supabase
       .from('houses')
       .select('handle')
@@ -230,7 +233,6 @@ export default function CommunityFeedPage() {
       )
       setCommentInputs({ ...commentInputs, [postId]: '' })
 
-      // Send notification if commenting on someone else's post
       if (postOwnerId !== user.id) {
         await supabase.from('notifications').insert([
           {
@@ -272,7 +274,6 @@ export default function CommunityFeedPage() {
 
   return (
     <div className="px-5 pt-6 pb-20 space-y-4 bg-[#111111] min-h-screen max-w-xl mx-auto font-sans text-[#EDEDED]">
-      {/* Header & Tabs */}
       <div className="flex items-center justify-between border-b border-[#222] pb-3">
         <h1 className="text-lg font-bold tracking-tight text-white">HomeWallr Feed</h1>
         <div className="flex items-center gap-2">
@@ -306,7 +307,6 @@ export default function CommunityFeedPage() {
         </div>
       )}
 
-      {/* Post Stream */}
       {displayedPosts.length === 0 ? (
         <div className="p-10 rounded-2xl bg-[#181818] border border-[#262626] text-center space-y-2">
           <p className="text-xs text-[#888]">No posts in this feed yet.</p>
@@ -322,7 +322,6 @@ export default function CommunityFeedPage() {
 
             return (
               <div key={post.id} className="rounded-2xl bg-[#181818] border border-[#262626] overflow-hidden shadow-md space-y-3">
-                {/* Author Header */}
                 <div className="px-4 pt-3.5 flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     {post.author_avatar ? (
@@ -355,7 +354,6 @@ export default function CommunityFeedPage() {
                   )}
                 </div>
 
-                {/* Post Media */}
                 {post.image_url && (
                   <div className="bg-black">
                     {post.media_type === 'video' ? (
@@ -366,7 +364,6 @@ export default function CommunityFeedPage() {
                   </div>
                 )}
 
-                {/* Actions & Likes */}
                 <div className="px-4 space-y-2">
                   <div className="flex items-center gap-4 text-sm">
                     <button
@@ -397,7 +394,6 @@ export default function CommunityFeedPage() {
                     )}
                   </div>
 
-                  {/* Caption with Highlighted Hashtags */}
                   {post.caption && (
                     <p className="text-xs text-white leading-relaxed">
                       {post.caption.split(' ').map((word, i) => {
@@ -419,7 +415,6 @@ export default function CommunityFeedPage() {
                     </p>
                   )}
 
-                  {/* Specs Tags */}
                   {post.specs && post.specs.length > 0 && (
                     <div className="flex flex-wrap gap-1 pt-1">
                       {post.specs.map((spec, idx) => (
@@ -431,7 +426,6 @@ export default function CommunityFeedPage() {
                   )}
                 </div>
 
-                {/* Comments Section */}
                 <div className="bg-[#151515] px-4 py-3 border-t border-[#222] space-y-2.5">
                   {post.comments.length > 0 && (
                     <div className="space-y-1.5 max-h-32 overflow-y-auto">

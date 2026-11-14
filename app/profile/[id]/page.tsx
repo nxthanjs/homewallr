@@ -34,6 +34,7 @@ interface GridPost {
   created_at: string
   likes_count?: number
   is_liked?: boolean
+  is_saved?: boolean
   comments?: CommentItem[]
 }
 
@@ -155,7 +156,7 @@ function UserProfileContent() {
 
       if (roomData) setRooms(roomData)
 
-      // 4. Fetch target user's posts strictly scoped to targetUserId
+      // 4. Fetch target user's posts strictly scoped to targetUserId with database persistence for likes, saves, and comments
       const { data: postData } = await supabase
         .from('posts')
         .select('*')
@@ -163,13 +164,43 @@ function UserProfileContent() {
         .eq('is_story', false)
         .order('created_at', { ascending: false })
 
-      if (postData) {
-        const enhancedPosts: GridPost[] = postData.map((p) => ({
-          ...p,
-          likes_count: Math.floor(Math.random() * 5) + 1,
-          is_liked: false,
-          comments: [],
-        }))
+      if (postData && authUser) {
+        const enhancedPosts: GridPost[] = await Promise.all(
+          postData.map(async (p) => {
+            const { count: likesCount } = await supabase
+              .from('post_likes')
+              .select('*', { count: 'exact', head: true })
+              .eq('post_id', p.id)
+
+            const { data: userLike } = await supabase
+              .from('post_likes')
+              .select('id')
+              .eq('post_id', p.id)
+              .eq('user_id', authUser.id)
+              .maybeSingle()
+
+            const { data: userSave } = await supabase
+              .from('saved_posts')
+              .select('id')
+              .eq('post_id', p.id)
+              .eq('user_id', authUser.id)
+              .maybeSingle()
+
+            const { data: commentsData } = await supabase
+              .from('post_comments')
+              .select('*')
+              .eq('post_id', p.id)
+              .order('created_at', { ascending: true })
+
+            return {
+              ...p,
+              likes_count: likesCount || 0,
+              is_liked: !!userLike,
+              is_saved: !!userSave,
+              comments: commentsData || [],
+            }
+          })
+        )
         setPosts(enhancedPosts)
       } else {
         setPosts([])
@@ -276,34 +307,98 @@ function UserProfileContent() {
     return rooms.find((r) => r.id === roomId)?.name || 'Room'
   }
 
-  const toggleLikeModalPost = () => {
-    if (!selectedPost) return
-    const updated = {
-      ...selectedPost,
-      is_liked: !selectedPost.is_liked,
-      likes_count: selectedPost.is_liked ? (selectedPost.likes_count || 1) - 1 : (selectedPost.likes_count || 0) + 1,
-    }
+  const toggleLikeModalPost = async () => {
+    if (!selectedPost || !currentAuthUser) return
+    const isCurrentlyLiked = selectedPost.is_liked
+    const newLikedState = !isCurrentlyLiked
+    const newCount = Math.max(0, (selectedPost.likes_count || 0) + (newLikedState ? 1 : -1))
+
+    const updated = { ...selectedPost, is_liked: newLikedState, likes_count: newCount }
     setSelectedPost(updated)
     setPosts(posts.map((p) => (p.id === updated.id ? updated : p)))
+
+    if (newLikedState) {
+      const { error } = await supabase.from('post_likes').insert([{ post_id: selectedPost.id, user_id: currentAuthUser.id }])
+      if (error) {
+        alert('Error liking post: ' + error.message)
+        return
+      }
+
+      if (selectedPost.user_id !== currentAuthUser.id) {
+        await supabase.from('notifications').insert([
+          {
+            user_id: selectedPost.user_id,
+            actor_id: currentAuthUser.id,
+            actor_handle: currentUserHandle,
+            type: 'like',
+            post_id: selectedPost.id,
+          },
+        ])
+      }
+    } else {
+      await supabase.from('post_likes').delete().eq('post_id', selectedPost.id).eq('user_id', currentAuthUser.id)
+    }
   }
 
-  const handleAddCommentModal = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedPost || !commentInput.trim()) return
+  const toggleSaveModalPost = async () => {
+    if (!selectedPost || !currentAuthUser) return
+    const isCurrentlySaved = selectedPost.is_saved
+    const newSavedState = !isCurrentlySaved
 
-    const newComment: CommentItem = {
-      id: `${Date.now()}`,
-      user_handle: currentUserHandle,
-      content: commentInput.trim(),
-      created_at: new Date().toISOString(),
+    const updated = { ...selectedPost, is_saved: newSavedState }
+    setSelectedPost(updated)
+    setPosts(posts.map((p) => (p.id === updated.id ? updated : p)))
+
+    if (newSavedState) {
+      await supabase.from('saved_posts').insert([{ post_id: selectedPost.id, user_id: currentAuthUser.id }])
+    } else {
+      await supabase.from('saved_posts').delete().eq('post_id', selectedPost.id).eq('user_id', currentAuthUser.id)
+    }
+  }
+
+  const handleAddCommentModal = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedPost || !currentAuthUser || !commentInput.trim()) return
+
+    const text = commentInput.trim()
+    const { data, error } = await supabase
+      .from('post_comments')
+      .insert([
+        {
+          post_id: selectedPost.id,
+          user_id: currentAuthUser.id,
+          user_handle: currentUserHandle,
+          content: text,
+        },
+      ])
+      .select()
+      .single()
+
+    if (error) {
+      alert('Error posting comment: ' + error.message)
+      return
     }
 
-    const updatedComments = [...(selectedPost.comments || []), newComment]
-    const updatedPost = { ...selectedPost, comments: updatedComments }
+    if (data) {
+      const updatedComments = [...(selectedPost.comments || []), data]
+      const updatedPost = { ...selectedPost, comments: updatedComments }
 
-    setSelectedPost(updatedPost)
-    setPosts(posts.map((p) => (p.id === updatedPost.id ? updatedPost : p)))
-    setCommentInput('')
+      setSelectedPost(updatedPost)
+      setPosts(posts.map((p) => (p.id === updatedPost.id ? updatedPost : p)))
+      setCommentInput('')
+
+      if (selectedPost.user_id !== currentAuthUser.id) {
+        await supabase.from('notifications').insert([
+          {
+            user_id: selectedPost.user_id,
+            actor_id: currentAuthUser.id,
+            actor_handle: currentUserHandle,
+            type: 'comment',
+            post_id: selectedPost.id,
+          },
+        ])
+      }
+    }
   }
 
   if (loading) return <div className="p-6 text-xs text-[#888] bg-[#111] min-h-screen">Loading passport...</div>
@@ -442,7 +537,7 @@ function UserProfileContent() {
         </div>
       )}
 
-      {/* Full Screen Lightbox Modal with Reactions & Comments */}
+      {/* Full Screen Lightbox Modal with Database Persisted Reactions & Comments */}
       {selectedPost && (
         <div
           className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xs flex items-center justify-center p-4"
@@ -489,8 +584,21 @@ function UserProfileContent() {
                   <span className="text-xs">{selectedPost.likes_count}</span>
                 </button>
                 <span className="text-xs text-[#AAA]">💬 {(selectedPost.comments || []).length} Comments</span>
+
+                <button
+                  type="button"
+                  onClick={toggleSaveModalPost}
+                  className={`ml-auto text-xs font-semibold px-3 py-1 rounded-full border transition-colors ${
+                    selectedPost.is_saved
+                      ? 'bg-cyan-500 text-black border-cyan-400'
+                      : 'bg-[#222] text-[#CCC] border-[#333] hover:text-white'
+                  }`}
+                >
+                  {selectedPost.is_saved ? '🔖 Saved' : '📌 Save Post'}
+                </button>
+
                 {selectedPost.cost && (
-                  <span className="ml-auto text-xs font-bold text-white">£{Number(selectedPost.cost).toLocaleString()}</span>
+                  <span className="text-xs font-bold text-white">£{Number(selectedPost.cost).toLocaleString()}</span>
                 )}
               </div>
 
