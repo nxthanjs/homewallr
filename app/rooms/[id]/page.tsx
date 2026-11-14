@@ -1,11 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase' 
-
-// fresh build
+import { supabase } from '@/lib/supabase'
 
 interface RoomDetail {
   id: string
@@ -29,7 +27,7 @@ interface RoomPost {
   created_at: string
 }
 
-export default function RoomDetailPage() {
+function RoomDetailContent() {
   const params = useParams()
   const router = useRouter()
   const roomId = params?.id as string
@@ -274,5 +272,13 @@ export default function RoomDetailPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function RoomDetailPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-xs text-[#9C9A92]">Loading room...</div>}>
+      <RoomDetailContent />
+    </Suspense>
   )
 }
