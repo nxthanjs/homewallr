@@ -6,6 +6,13 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 
+interface CommentItem {
+  id: string
+  user_handle: string
+  content: string
+  created_at: string
+}
+
 interface FeedPost {
   id: string
   user_id: string
@@ -21,7 +28,8 @@ interface FeedPost {
   author_avatar?: string
   likes_count: number
   is_liked: boolean
-  comments: { id: string; user_handle: string; content: string; created_at: string }[]
+  is_saved: boolean
+  comments: CommentItem[]
 }
 
 export default function CommunityFeedPage() {
@@ -35,9 +43,8 @@ export default function CommunityFeedPage() {
 
   // Comment input state per post ID
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({})
-  const [activeCommentPostId, setActiveCommentPostId] = useState<string | null>(null)
 
-  const fetchFeed = async (currentUser: User, currentFollowing: string[]) => {
+  const fetchFeed = async (currentUser: User) => {
     // Fetch real posts from Supabase
     const { data: postData } = await supabase
       .from('posts')
@@ -45,54 +52,59 @@ export default function CommunityFeedPage() {
       .eq('is_story', false)
       .order('created_at', { ascending: false })
 
-    // Seed/Fallback demo posts if database is new/empty to solve empty feed problem
-    const demoPosts: FeedPost[] = [
-      {
-        id: 'demo-1',
-        user_id: 'builder-1',
-        room_id: null,
-        stage: 'Painting & Decorating',
-        caption: 'Finished our 1930s hallway panelling and painted in Farrow & Ball Ammonite. Absolute game changer for the entryway! #panelling #hallway #1930shouse',
-        image_url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-        media_type: 'image',
-        specs: ['Farrow & Ball Ammonite', 'MDF Panelling'],
-        cost: 240,
-        created_at: new Date(Date.now() - 3600000 * 3).toISOString(),
-        author_handle: 'nathanspurdle',
-        likes_count: 14,
-        is_liked: true,
-        comments: [
-          { id: 'c1', user_handle: 'sarah_reno', content: 'Looks so crisp! Love the color choice.', created_at: '' },
-        ],
-      },
-      {
-        id: 'demo-2',
-        user_id: 'builder-2',
-        room_id: null,
-        stage: 'Second Fix & Flooring',
-        caption: 'Laying down light oak herringbone flooring across the open plan kitchen diner. Tedious cuts around the fireplace but totally worth it! #herringbone #flooring #kitchendiner',
-        image_url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80',
-        media_type: 'image',
-        specs: ['Engineered Oak Herringbone', 'Bostik Adhesive'],
-        cost: 1450,
-        created_at: new Date(Date.now() - 3600000 * 12).toISOString(),
-        author_handle: 'victorian_renovator',
-        likes_count: 29,
-        is_liked: false,
-        comments: [],
-      },
-    ]
+    const realPosts: FeedPost[] = await Promise.all(
+      (postData || []).map(async (p) => {
+        // Fetch author house handle & avatar
+        const { data: houseData } = await supabase
+          .from('houses')
+          .select('handle, avatar_url')
+          .eq('user_id', p.user_id)
+          .maybeSingle()
 
-    const realPosts: FeedPost[] = (postData || []).map((p) => ({
-      ...p,
-      author_handle: p.user_id === currentUser.id ? currentUser.email?.split('@')[0] : 'homeowner_' + p.user_id.slice(0, 5),
-      likes_count: Math.floor(Math.random() * 8) + 1,
-      is_liked: false,
-      comments: [],
-    }))
+        const authorHandle = houseData?.handle || (p.user_id === currentUser.id ? currentUser.email?.split('@')[0] : 'homeowner')
+        const authorAvatar = houseData?.avatar_url || undefined
 
-    const combined = [...realPosts, ...demoPosts]
-    setPosts(combined)
+        // Fetch likes count & user like status
+        const { count: likesCount } = await supabase
+          .from('post_likes')
+          .select('*', { count: 'exact', head: true })
+          .eq('post_id', p.id)
+
+        const { data: userLike } = await supabase
+          .from('post_likes')
+          .select('id')
+          .eq('post_id', p.id)
+          .eq('user_id', currentUser.id)
+          .maybeSingle()
+
+        // Fetch user save status
+        const { data: userSave } = await supabase
+          .from('saved_posts')
+          .select('id')
+          .eq('post_id', p.id)
+          .eq('user_id', currentUser.id)
+          .maybeSingle()
+
+        // Fetch comments
+        const { data: commentsData } = await supabase
+          .from('post_comments')
+          .select('*')
+          .eq('post_id', p.id)
+          .order('created_at', { ascending: true })
+
+        return {
+          ...p,
+          author_handle: authorHandle,
+          author_avatar: authorAvatar,
+          likes_count: likesCount || 0,
+          is_liked: !!userLike,
+          is_saved: !!userSave,
+          comments: commentsData || [],
+        }
+      })
+    )
+
+    setPosts(realPosts)
     setLoading(false)
   }
 
@@ -107,48 +119,98 @@ export default function CommunityFeedPage() {
         .from('follows')
         .select('following_id')
         .eq('follower_id', auth.user.id)
+        .eq('status', 'accepted')
 
       const fIds = (followsData || []).map((f) => f.following_id)
       setFollowingIds(fIds)
 
-      await fetchFeed(auth.user, fIds)
+      await fetchFeed(auth.user)
     }
     init()
   }, [router])
 
-  const toggleLike = (postId: string) => {
+  const toggleLike = async (postId: string) => {
+    if (!user) return
+    const post = posts.find((p) => p.id === postId)
+    if (!post) return
+
+    const isCurrentlyLiked = post.is_liked
+    const newLikedState = !isCurrentlyLiked
+    const newCount = Math.max(0, post.likes_count + (newLikedState ? 1 : -1))
+
+    // Optimistic UI update
     setPosts((prev) =>
-      prev.map((p) => {
-        if (p.id === postId) {
-          return {
-            ...p,
-            is_liked: !p.is_liked,
-            likes_count: p.is_liked ? p.likes_count - 1 : p.likes_count + 1,
-          }
-        }
-        return p
-      })
+      prev.map((p) => (p.id === postId ? { ...p, is_liked: newLikedState, likes_count: newCount } : p))
     )
+
+    if (newLikedState) {
+      await supabase.from('post_likes').insert([{ post_id: postId, user_id: user.id }])
+    } else {
+      await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user.id)
+    }
   }
 
-  const handleAddComment = (postId: string, e: React.FormEvent) => {
+  const toggleSave = async (postId: string) => {
+    if (!user) return
+    const post = posts.find((p) => p.id === postId)
+    if (!post) return
+
+    const isCurrentlySaved = post.is_saved
+    const newSavedState = !isCurrentlySaved
+
+    // Optimistic UI update
+    setPosts((prev) =>
+      prev.map((p) => (p.id === postId ? { ...p, is_saved: newSavedState } : p))
+    )
+
+    if (newSavedState) {
+      await supabase.from('saved_posts').insert([{ post_id: postId, user_id: user.id }])
+    } else {
+      await supabase.from('saved_posts').delete().eq('post_id', postId).eq('user_id', user.id)
+    }
+  }
+
+  const handleAddComment = async (postId: string, e: React.FormEvent) => {
     e.preventDefault()
     const text = commentInputs[postId]?.trim()
     if (!text || !user) return
 
-    const handle = user.email?.split('@')[0] || 'homeowner'
-    setPosts((prev) =>
-      prev.map((p) => {
-        if (p.id === postId) {
-          return {
-            ...p,
-            comments: [...p.comments, { id: `${Date.now()}`, user_handle: handle, content: text, created_at: new Date().toISOString() }],
+    // Fetch current user handle
+    const { data: myHouse } = await supabase
+      .from('houses')
+      .select('handle')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    const handle = myHouse?.handle || user.email?.split('@')[0] || 'homeowner'
+
+    const { data, error } = await supabase
+      .from('post_comments')
+      .insert([
+        {
+          post_id: postId,
+          user_id: user.id,
+          user_handle: handle,
+          content: text,
+        },
+      ])
+      .select()
+      .single()
+
+    if (!error && data) {
+      setPosts((prev) =>
+        prev.map((p) => {
+          if (p.id === postId) {
+            return {
+              ...p,
+              comments: [...p.comments, data],
+            }
           }
-        }
-        return p
-      })
-    )
-    setCommentInputs({ ...commentInputs, [postId]: '' })
+          return p
+        })
+      )
+      setCommentInputs({ ...commentInputs, [postId]: '' })
+    }
   }
 
   const handleFollowToggle = async (targetUserId: string) => {
@@ -159,26 +221,25 @@ export default function CommunityFeedPage() {
       await supabase.from('follows').delete().eq('follower_id', user.id).eq('following_id', targetUserId)
       setFollowingIds(followingIds.filter((id) => id !== targetUserId))
     } else {
-      await supabase.from('follows').insert({ follower_id: user.id, following_id: targetUserId })
+      await supabase.from('follows').insert({ follower_id: user.id, following_id: targetUserId, status: 'accepted' })
       setFollowingIds([...followingIds, targetUserId])
     }
   }
 
-  if (loading) return <div className="p-6 text-xs text-[#888]">Loading community feed...</div>
+  if (loading) return <div className="p-6 text-xs text-[#888] bg-[#111] min-h-screen">Loading community feed...</div>
 
-  const displayedPosts = posts
-    .filter((p) => {
-      if (feedTab === 'following' && p.user_id !== user?.id && !followingIds.includes(p.user_id)) {
-        return false
-      }
-      if (hashtagFilter) {
-        return (p.caption || '').toLowerCase().includes(`#${hashtagFilter.toLowerCase()}`)
-      }
-      return true
-    })
+  const displayedPosts = posts.filter((p) => {
+    if (feedTab === 'following' && p.user_id !== user?.id && !followingIds.includes(p.user_id)) {
+      return false
+    }
+    if (hashtagFilter) {
+      return (p.caption || '').toLowerCase().includes(`#${hashtagFilter.toLowerCase()}`)
+    }
+    return true
+  })
 
   return (
-    <div className="px-5 pt-6 pb-20 space-y-4 bg-[#111111] min-h-screen max-w-xl mx-auto font-sans">
+    <div className="px-5 pt-6 pb-20 space-y-4 bg-[#111111] min-h-screen max-w-xl mx-auto font-sans text-[#EDEDED]">
       {/* Header & Tabs */}
       <div className="flex items-center justify-between border-b border-[#222] pb-3">
         <h1 className="text-lg font-bold tracking-tight text-white">HomeWallr Feed</h1>
@@ -232,11 +293,17 @@ export default function CommunityFeedPage() {
                 {/* Author Header */}
                 <div className="px-4 pt-3.5 flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-500 to-pink-500 text-white font-bold flex items-center justify-center text-xs">
-                      {(post.author_handle || 'U')[0].toUpperCase()}
-                    </div>
+                    {post.author_avatar ? (
+                      <img src={post.author_avatar} alt="" className="w-8 h-8 rounded-full object-cover border border-[#262626]" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-500 to-pink-500 text-white font-bold flex items-center justify-center text-xs">
+                        {(post.author_handle || 'U')[0].toUpperCase()}
+                      </div>
+                    )}
                     <div>
-                      <p className="text-xs font-bold text-white">@{post.author_handle}</p>
+                      <Link href={`/profile/${post.user_id}`} className="text-xs font-bold text-white hover:underline">
+                        @{post.author_handle}
+                      </Link>
                       {post.stage && <p className="text-[10px] text-[#888]">{post.stage}</p>}
                     </div>
                   </div>
@@ -259,7 +326,11 @@ export default function CommunityFeedPage() {
                 {/* Post Media */}
                 {post.image_url && (
                   <div className="bg-black">
-                    <img src={post.image_url} alt="Renovation post" className="w-full max-h-96 object-cover" />
+                    {post.media_type === 'video' ? (
+                      <video src={post.image_url} controls playsInline className="w-full max-h-96 object-cover" />
+                    ) : (
+                      <img src={post.image_url} alt="Renovation post" className="w-full max-h-96 object-cover" />
+                    )}
                   </div>
                 )}
 
@@ -269,23 +340,28 @@ export default function CommunityFeedPage() {
                     <button
                       type="button"
                       onClick={() => toggleLike(post.id)}
-                      className={`flex items-center gap-1.5 font-medium ${post.is_liked ? 'text-red-500' : 'text-[#AAA] hover:text-white'}`}
+                      className={`flex items-center gap-1.5 font-medium cursor-pointer ${post.is_liked ? 'text-red-500' : 'text-[#AAA] hover:text-white'}`}
                     >
                       <span>{post.is_liked ? '❤️' : '🤍'}</span>
                       <span className="text-xs">{post.likes_count}</span>
                     </button>
 
+                    <span className="text-xs text-[#AAA]">💬 {post.comments.length} Comments</span>
+
                     <button
                       type="button"
-                      onClick={() => setActiveCommentPostId(activeCommentPostId === post.id ? null : post.id)}
-                      className="text-[#AAA] hover:text-white text-xs flex items-center gap-1.5 font-medium"
+                      onClick={() => toggleSave(post.id)}
+                      className={`ml-auto text-xs font-semibold px-3 py-1 rounded-full border transition-colors ${
+                        post.is_saved
+                          ? 'bg-cyan-500 text-black border-cyan-400'
+                          : 'bg-[#222] text-[#CCC] border-[#333] hover:text-white'
+                      }`}
                     >
-                      <span>💬</span>
-                      <span>{post.comments.length} Comments</span>
+                      {post.is_saved ? '🔖 Saved' : '📌 Save Post'}
                     </button>
 
                     {post.cost && (
-                      <span className="ml-auto text-xs font-bold text-white">£{Number(post.cost).toLocaleString()}</span>
+                      <span className="text-xs font-bold text-white">£{Number(post.cost).toLocaleString()}</span>
                     )}
                   </div>
 
@@ -344,7 +420,7 @@ export default function CommunityFeedPage() {
                       onChange={(e) => setCommentInputs({ ...commentInputs, [post.id]: e.target.value })}
                       className="flex-1 px-3 py-2 text-xs bg-[#1E1E1E] text-white placeholder-[#666] border border-[#2A2A2A] rounded-xl focus:outline-none focus:border-white"
                     />
-                    <button type="submit" className="px-3.5 py-2 rounded-xl bg-white text-black text-xs font-semibold">
+                    <button type="submit" className="px-3.5 py-2 rounded-xl bg-white text-black text-xs font-semibold hover:bg-[#E0E0E0]">
                       Post
                     </button>
                   </form>

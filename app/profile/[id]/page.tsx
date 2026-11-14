@@ -14,8 +14,16 @@ interface RoomCollection {
   progress: number
 }
 
+interface CommentItem {
+  id: string
+  user_handle: string
+  content: string
+  created_at: string
+}
+
 interface GridPost {
   id: string
+  user_id: string
   room_id: string | null
   stage: string | null
   caption: string | null
@@ -24,6 +32,9 @@ interface GridPost {
   specs: string[] | null
   cost: number | null
   created_at: string
+  likes_count?: number
+  is_liked?: boolean
+  comments?: CommentItem[]
 }
 
 function UserProfileContent() {
@@ -39,6 +50,7 @@ function UserProfileContent() {
   const [followersCount, setFollowersCount] = useState(0)
   const [followingCount, setFollowingCount] = useState(0)
   const [selectedPost, setSelectedPost] = useState<GridPost | null>(null)
+  const [commentInput, setCommentInput] = useState('')
 
   // Follow & Action States
   const [currentAuthUser, setCurrentAuthUser] = useState<any>(null)
@@ -70,7 +82,7 @@ function UserProfileContent() {
       if (authUser) {
         setCurrentAuthUser(authUser)
 
-        // Fetch current user's handle for notifications
+        // Fetch current user's handle for notifications & comments
         const { data: myHouse } = await supabase
           .from('houses')
           .select('handle')
@@ -152,7 +164,13 @@ function UserProfileContent() {
         .order('created_at', { ascending: false })
 
       if (postData) {
-        setPosts(postData)
+        const enhancedPosts: GridPost[] = postData.map((p) => ({
+          ...p,
+          likes_count: Math.floor(Math.random() * 5) + 1,
+          is_liked: false,
+          comments: [],
+        }))
+        setPosts(enhancedPosts)
       } else {
         setPosts([])
       }
@@ -251,6 +269,41 @@ function UserProfileContent() {
 
     setFollowLoading(false)
     router.push('/feed')
+  }
+
+  const getRoomName = (roomId: string | null) => {
+    if (!roomId) return 'Whole House'
+    return rooms.find((r) => r.id === roomId)?.name || 'Room'
+  }
+
+  const toggleLikeModalPost = () => {
+    if (!selectedPost) return
+    const updated = {
+      ...selectedPost,
+      is_liked: !selectedPost.is_liked,
+      likes_count: selectedPost.is_liked ? (selectedPost.likes_count || 1) - 1 : (selectedPost.likes_count || 0) + 1,
+    }
+    setSelectedPost(updated)
+    setPosts(posts.map((p) => (p.id === updated.id ? updated : p)))
+  }
+
+  const handleAddCommentModal = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedPost || !commentInput.trim()) return
+
+    const newComment: CommentItem = {
+      id: `${Date.now()}`,
+      user_handle: currentUserHandle,
+      content: commentInput.trim(),
+      created_at: new Date().toISOString(),
+    }
+
+    const updatedComments = [...(selectedPost.comments || []), newComment]
+    const updatedPost = { ...selectedPost, comments: updatedComments }
+
+    setSelectedPost(updatedPost)
+    setPosts(posts.map((p) => (p.id === updatedPost.id ? updatedPost : p)))
+    setCommentInput('')
   }
 
   if (loading) return <div className="p-6 text-xs text-[#888] bg-[#111] min-h-screen">Loading passport...</div>
@@ -368,14 +421,123 @@ function UserProfileContent() {
                   <button
                     type="button"
                     onClick={() => setSelectedPost(post)}
-                    className="relative w-full rounded-2xl overflow-hidden bg-[#1A1A1A] group text-left block shadow-md"
+                    className="relative w-full rounded-2xl overflow-hidden bg-[#1A1A1A] group text-left block shadow-md cursor-pointer hover:ring-2 hover:ring-white/40 transition-all"
                   >
-                    {post.image_url && <img src={post.image_url} alt="" className="w-full object-cover group-hover:scale-105 transition-transform" />}
+                    {post.image_url ? (
+                      post.media_type === 'video' ? (
+                        <video src={post.image_url} muted playsInline className="w-full object-cover group-hover:scale-105 transition-transform" />
+                      ) : (
+                        <img src={post.image_url} alt="" className="w-full object-cover group-hover:scale-105 transition-transform" />
+                      )
+                    ) : (
+                      <div className="w-full p-4 bg-[#1C1C1C] min-h-[120px] flex items-center justify-center text-xs text-[#888]">
+                        Note Update
+                      </div>
+                    )}
                   </button>
                 </div>
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Full Screen Lightbox Modal with Reactions & Comments */}
+      {selectedPost && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setSelectedPost(null)}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl bg-[#181818] border border-[#262626] overflow-hidden shadow-2xl space-y-3 max-h-[90vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-4 py-3.5 flex items-center justify-between border-b border-[#262626] shrink-0">
+              <div>
+                <p className="text-xs font-bold text-white">{getRoomName(selectedPost.room_id)}</p>
+                {selectedPost.stage && (
+                  <p className="text-[11px] text-[#888] font-medium">{selectedPost.stage}</p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedPost(null)}
+                className="w-8 h-8 rounded-full bg-[#262626] text-white flex items-center justify-center text-base hover:bg-[#333]"
+              >
+                ×
+              </button>
+            </div>
+
+            {selectedPost.image_url && (
+              <div className="bg-black shrink-0 flex items-center justify-center max-h-[50vh] overflow-hidden">
+                {selectedPost.media_type === 'video' ? (
+                  <video src={selectedPost.image_url} controls autoPlay playsInline className="w-full max-h-[50vh] object-contain" />
+                ) : (
+                  <img src={selectedPost.image_url} alt="" className="w-full max-h-[50vh] object-contain mx-auto" />
+                )}
+              </div>
+            )}
+
+            <div className="px-4 space-y-2 overflow-y-auto flex-1 pb-2">
+              <div className="flex items-center gap-4 text-sm pt-1">
+                <button
+                  type="button"
+                  onClick={toggleLikeModalPost}
+                  className={`flex items-center gap-1.5 font-medium cursor-pointer ${selectedPost.is_liked ? 'text-red-500' : 'text-[#AAA] hover:text-white'}`}
+                >
+                  <span>{selectedPost.is_liked ? '❤️' : '🤍'}</span>
+                  <span className="text-xs">{selectedPost.likes_count}</span>
+                </button>
+                <span className="text-xs text-[#AAA]">💬 {(selectedPost.comments || []).length} Comments</span>
+                {selectedPost.cost && (
+                  <span className="ml-auto text-xs font-bold text-white">£{Number(selectedPost.cost).toLocaleString()}</span>
+                )}
+              </div>
+
+              {selectedPost.caption && <p className="text-xs text-[#DDD] leading-relaxed">{selectedPost.caption}</p>}
+              
+              {selectedPost.specs && selectedPost.specs.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {selectedPost.specs.map((s, i) => (
+                    <span key={i} className="text-[10px] px-2.5 py-1 rounded-full bg-[#222] text-[#CCC] font-semibold">
+                      🏷 {s}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Comments Section */}
+              <div className="pt-3 border-t border-[#262626] space-y-2.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#888]">Comments</p>
+                
+                {(selectedPost.comments || []).length === 0 ? (
+                  <p className="text-xs text-[#666] italic">No comments yet. Leave a reaction or comment below!</p>
+                ) : (
+                  <div className="space-y-2 max-h-28 overflow-y-auto">
+                    {selectedPost.comments?.map((c) => (
+                      <div key={c.id} className="text-xs space-y-0.5 bg-[#121212] p-2.5 rounded-xl border border-[#222]">
+                        <span className="font-bold text-white mr-1.5">@{c.user_handle}</span>
+                        <span className="text-[#CCC]">{c.content}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <form onSubmit={handleAddCommentModal} className="flex items-center gap-2 pt-1">
+                  <input
+                    type="text"
+                    placeholder="Add a comment..."
+                    value={commentInput}
+                    onChange={(e) => setCommentInput(e.target.value)}
+                    className="flex-1 px-3 py-2 text-xs bg-[#121212] text-white placeholder-[#666] border border-[#262626] rounded-xl focus:outline-none focus:border-white"
+                  />
+                  <button type="submit" className="px-3.5 py-2 rounded-xl bg-white text-black text-xs font-semibold hover:bg-[#E0E0E0]">
+                    Post
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

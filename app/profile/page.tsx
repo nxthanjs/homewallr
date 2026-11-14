@@ -26,8 +26,16 @@ interface RoomCollection {
   length_m: number | null
 }
 
+interface CommentItem {
+  id: string
+  user_handle: string
+  content: string
+  created_at: string
+}
+
 interface GridPost {
   id: string
+  user_id: string
   room_id: string | null
   stage: string | null
   caption: string | null
@@ -39,6 +47,10 @@ interface GridPost {
   cost: number | null
   contractor: string | null
   created_at: string
+  likes_count?: number
+  is_liked?: boolean
+  is_saved?: boolean
+  comments?: CommentItem[]
 }
 
 interface SavedPin {
@@ -64,7 +76,7 @@ export default function VisualProfilePage() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const [activeTab, setActiveTab] = useState<'posts' | 'house' | 'pinned_ideas'>('posts')
+  const [activeTab, setActiveTab] = useState<'posts' | 'house' | 'pinned_ideas' | 'saved_posts'>('posts')
   const [selectedRoomFilter, setSelectedRoomFilter] = useState<string>('all')
 
   // Profile & House Metadata
@@ -75,6 +87,7 @@ export default function VisualProfilePage() {
   const [bio, setBio] = useState('')
   const [houseTitle, setHouseTitle] = useState('The 1930s Semi')
   const [houseEra, setHouseEra] = useState('1930s Semi-Detached')
+  const [currentUserHandle, setCurrentUserHandle] = useState<string>('homeowner')
 
   // Avatar & Story Menu State
   const [showAvatarMenu, setShowAvatarMenu] = useState(false)
@@ -92,12 +105,14 @@ export default function VisualProfilePage() {
   // Data collections
   const [rooms, setRooms] = useState<RoomCollection[]>([])
   const [gridPosts, setGridPosts] = useState<GridPost[]>([])
+  const [savedPosts, setSavedPosts] = useState<GridPost[]>([])
   const [activeStories, setActiveStories] = useState<GridPost[]>([])
   const [savedPins, setSavedPins] = useState<SavedPin[]>([])
   const [pinnedProducts, setPinnedProducts] = useState<PinnedProduct[]>([])
 
   // Lightbox & Modals
   const [selectedPost, setSelectedPost] = useState<GridPost | null>(null)
+  const [commentInput, setCommentInput] = useState('')
   const [storyIndex, setStoryIndex] = useState<number | null>(null)
   const [showPinIdeaModal, setShowPinIdeaModal] = useState(false)
   const [pinningIdea, setPinningIdea] = useState(false)
@@ -147,6 +162,7 @@ export default function VisualProfilePage() {
         setBio(house.bio || '')
         if (house.title) setHouseTitle(house.title)
         if (house.era) setHouseEra(house.era)
+        if (house.handle) setCurrentUserHandle(house.handle)
         if (Array.isArray(house.pinned_products)) setPinnedProducts(house.pinned_products)
       }
 
@@ -167,10 +183,11 @@ export default function VisualProfilePage() {
       setFollowersCount(followersC || 0)
       setFollowingCount(followingC || 0)
 
+      // Fetch posts strictly scoped to user ID
       const { data: postsData } = await supabase
         .from('posts')
         .select('*')
-        .eq('user_id', auth.user.id) // <-- Added strict user scope
+        .eq('user_id', auth.user.id)
         .order('created_at', { ascending: false })
 
       if (postsData) {
@@ -179,8 +196,95 @@ export default function VisualProfilePage() {
           (p) => p.is_story && (!p.expires_at || new Date(p.expires_at).getTime() > now)
         )
         const permanent = postsData.filter((p) => !p.is_story)
+
+        // Enrich permanent posts with likes, comments, and saves
+        const enhancedPosts = await Promise.all(
+          permanent.map(async (p) => {
+            const { count: likesCount } = await supabase
+              .from('post_likes')
+              .select('*', { count: 'exact', head: true })
+              .eq('post_id', p.id)
+
+            const { data: userLike } = await supabase
+              .from('post_likes')
+              .select('id')
+              .eq('post_id', p.id)
+              .eq('user_id', auth.user.id)
+              .maybeSingle()
+
+            const { data: userSave } = await supabase
+              .from('saved_posts')
+              .select('id')
+              .eq('post_id', p.id)
+              .eq('user_id', auth.user.id)
+              .maybeSingle()
+
+            const { data: commentsData } = await supabase
+              .from('post_comments')
+              .select('*')
+              .eq('post_id', p.id)
+              .order('created_at', { ascending: true })
+
+            return {
+              ...p,
+              likes_count: likesCount || 0,
+              is_liked: !!userLike,
+              is_saved: !!userSave,
+              comments: commentsData || [],
+            }
+          })
+        )
+
         setActiveStories(stories)
-        setGridPosts(permanent)
+        setGridPosts(enhancedPosts)
+      }
+
+      // Fetch Saved Posts bookmarks
+      const { data: savedBookmarks } = await supabase
+        .from('saved_posts')
+        .select('post_id')
+        .eq('user_id', auth.user.id)
+
+      if (savedBookmarks && savedBookmarks.length > 0) {
+        const postIds = savedBookmarks.map((s) => s.post_id)
+        const { data: bookmarkedPostsData } = await supabase
+          .from('posts')
+          .select('*')
+          .in('id', postIds)
+          .order('created_at', { ascending: false })
+
+        if (bookmarkedPostsData) {
+          const enhancedSaved = await Promise.all(
+            bookmarkedPostsData.map(async (p) => {
+              const { count: likesCount } = await supabase
+                .from('post_likes')
+                .select('*', { count: 'exact', head: true })
+                .eq('post_id', p.id)
+
+              const { data: userLike } = await supabase
+                .from('post_likes')
+                .select('id')
+                .eq('post_id', p.id)
+                .eq('user_id', auth.user.id)
+                .maybeSingle()
+
+              const { data: commentsData } = await supabase
+                .from('post_comments')
+                .select('*')
+                .eq('post_id', p.id)
+                .order('created_at', { ascending: true })
+
+              return {
+                ...p,
+                likes_count: likesCount || 0,
+                is_liked: !!userLike,
+                is_saved: true,
+                comments: commentsData || [],
+              }
+            })
+          )
+          setSavedPosts(enhancedSaved)
+        }
       }
 
       const { data: pinsData } = await supabase
@@ -193,6 +297,73 @@ export default function VisualProfilePage() {
     }
     loadProfileData()
   }, [router])
+
+  // Handle Like Toggle
+  const toggleLikePost = async () => {
+    if (!selectedPost || !user) return
+    const isCurrentlyLiked = selectedPost.is_liked
+    const newLikedState = !isCurrentlyLiked
+    const newCount = Math.max(0, (selectedPost.likes_count || 0) + (newLikedState ? 1 : -1))
+
+    if (newLikedState) {
+      await supabase.from('post_likes').insert([{ post_id: selectedPost.id, user_id: user.id }])
+    } else {
+      await supabase.from('post_likes').delete().eq('post_id', selectedPost.id).eq('user_id', user.id)
+    }
+
+    const updated = { ...selectedPost, is_liked: newLikedState, likes_count: newCount }
+    setSelectedPost(updated)
+    setGridPosts(gridPosts.map((p) => (p.id === updated.id ? updated : p)))
+    setSavedPosts(savedPosts.map((p) => (p.id === updated.id ? updated : p)))
+  }
+
+  // Handle Save / Bookmark Toggle
+  const toggleSavePost = async () => {
+    if (!selectedPost || !user) return
+    const isCurrentlySaved = selectedPost.is_saved
+    const newSavedState = !isCurrentlySaved
+
+    if (newSavedState) {
+      await supabase.from('saved_posts').insert([{ post_id: selectedPost.id, user_id: user.id }])
+      setSavedPosts([ { ...selectedPost, is_saved: true }, ...savedPosts ])
+    } else {
+      await supabase.from('saved_posts').delete().eq('post_id', selectedPost.id).eq('user_id', user.id)
+      setSavedPosts(savedPosts.filter((p) => p.id !== selectedPost.id))
+    }
+
+    const updated = { ...selectedPost, is_saved: newSavedState }
+    setSelectedPost(updated)
+    setGridPosts(gridPosts.map((p) => (p.id === updated.id ? updated : p)))
+  }
+
+  // Handle Add Comment
+  const handleAddComment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedPost || !user || !commentInput.trim()) return
+
+    const content = commentInput.trim()
+    const { data, error } = await supabase
+      .from('post_comments')
+      .insert([
+        {
+          post_id: selectedPost.id,
+          user_id: user.id,
+          user_handle: currentUserHandle,
+          content: content,
+        },
+      ])
+      .select()
+      .single()
+
+    if (!error && data) {
+      const updatedComments = [...(selectedPost.comments || []), data]
+      const updatedPost = { ...selectedPost, comments: updatedComments }
+      setSelectedPost(updatedPost)
+      setGridPosts(gridPosts.map((p) => (p.id === updatedPost.id ? updatedPost : p)))
+      setSavedPosts(savedPosts.map((p) => (p.id === updatedPost.id ? updatedPost : p)))
+      setCommentInput('')
+    }
+  }
 
   // Handle Avatar Image Upload
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -380,7 +551,6 @@ export default function VisualProfilePage() {
         </div>
 
         <div className="flex items-center gap-5">
-          {/* Hidden File Input for Avatar */}
           <input
             type="file"
             ref={fileInputRef}
@@ -389,7 +559,6 @@ export default function VisualProfilePage() {
             className="hidden"
           />
 
-          {/* Profile Picture with Clickable Menu */}
           <div className="relative" ref={avatarMenuRef}>
             <button
               type="button"
@@ -428,7 +597,6 @@ export default function VisualProfilePage() {
               </button>
             )}
 
-            {/* Profile Picture Popup Menu */}
             {showAvatarMenu && (
               <div className="absolute left-0 mt-2 w-48 rounded-2xl bg-[#1A1A1A] border border-[#333] shadow-2xl py-1.5 z-50 text-white">
                 {hasStories && (
@@ -526,11 +694,12 @@ export default function VisualProfilePage() {
         </div>
       </div>
 
-      <div className="px-5 pt-3 border-b border-[#222] flex items-center justify-center gap-8 bg-[#111] sticky top-[57px] z-40">
+      {/* Profile Navigation Tabs */}
+      <div className="px-5 pt-3 border-b border-[#222] flex items-center justify-center gap-6 bg-[#111] sticky top-[57px] z-40 overflow-x-auto">
         <button
           type="button"
           onClick={() => setActiveTab('posts')}
-          className={`pb-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
+          className={`pb-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 shrink-0 ${
             activeTab === 'posts'
               ? 'border-white text-white'
               : 'border-transparent text-[#777] hover:text-[#CCC]'
@@ -542,7 +711,7 @@ export default function VisualProfilePage() {
         <button
           type="button"
           onClick={() => setActiveTab('house')}
-          className={`pb-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
+          className={`pb-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 shrink-0 ${
             activeTab === 'house'
               ? 'border-white text-white'
               : 'border-transparent text-[#777] hover:text-[#CCC]'
@@ -554,13 +723,25 @@ export default function VisualProfilePage() {
         <button
           type="button"
           onClick={() => setActiveTab('pinned_ideas')}
-          className={`pb-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
+          className={`pb-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 shrink-0 ${
             activeTab === 'pinned_ideas'
               ? 'border-white text-white'
               : 'border-transparent text-[#777] hover:text-[#CCC]'
           }`}
         >
           Pinned Ideas ({savedPins.length})
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('saved_posts')}
+          className={`pb-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 shrink-0 ${
+            activeTab === 'saved_posts'
+              ? 'border-white text-white'
+              : 'border-transparent text-[#777] hover:text-[#CCC]'
+          }`}
+        >
+          Saved ({savedPosts.length})
         </button>
       </div>
 
@@ -616,7 +797,7 @@ export default function VisualProfilePage() {
                     <button
                       type="button"
                       onClick={() => setSelectedPost(post)}
-                      className="relative w-full rounded-2xl overflow-hidden bg-[#1A1A1A] group text-left focus:outline-none block shadow-md hover:ring-2 hover:ring-white/40 transition-all"
+                      className="relative w-full rounded-2xl overflow-hidden bg-[#1A1A1A] group text-left focus:outline-none block shadow-md hover:ring-2 hover:ring-white/40 transition-all cursor-pointer"
                     >
                       {post.image_url ? (
                         isVideo ? (
@@ -665,6 +846,41 @@ export default function VisualProfilePage() {
                   </div>
                 )
               })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'saved_posts' && (
+        <div className="pt-4 px-3 max-w-5xl mx-auto space-y-4">
+          {savedPosts.length === 0 ? (
+            <div className="mx-5 p-10 rounded-2xl bg-[#181818] border border-[#262626] text-center space-y-2">
+              <p className="text-xs font-bold text-white">No saved posts yet</p>
+              <p className="text-[11px] text-[#888]">Bookmark posts while browsing the feed to save them here.</p>
+            </div>
+          ) : (
+            <div className="columns-2 sm:columns-3 md:columns-4 gap-3 space-y-3">
+              {savedPosts.map((post) => (
+                <div key={post.id} className="break-inside-avoid">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPost(post)}
+                    className="relative w-full rounded-2xl overflow-hidden bg-[#1A1A1A] group text-left focus:outline-none block shadow-md hover:ring-2 hover:ring-white/40 transition-all cursor-pointer"
+                  >
+                    {post.image_url ? (
+                      post.media_type === 'video' ? (
+                        <video src={post.image_url} muted playsInline className="w-full object-cover group-hover:scale-105 transition-transform" />
+                      ) : (
+                        <img src={post.image_url} alt="" className="w-full object-cover group-hover:scale-105 transition-transform" />
+                      )
+                    ) : (
+                      <div className="w-full p-4 bg-[#1C1C1C] min-h-[120px] flex items-center justify-center text-xs text-[#888]">
+                        Note Update
+                      </div>
+                    )}
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -890,16 +1106,17 @@ export default function VisualProfilePage() {
         </div>
       )}
 
+      {/* Lightbox Modal with Full Likes, Comments & Save Features */}
       {selectedPost && (
         <div
           className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xs flex items-center justify-center p-4"
           onClick={() => setSelectedPost(null)}
         >
           <div
-            className="w-full max-w-md rounded-2xl bg-[#181818] border border-[#262626] overflow-hidden shadow-2xl space-y-3.5"
+            className="w-full max-w-lg rounded-2xl bg-[#181818] border border-[#262626] overflow-hidden shadow-2xl space-y-3 max-h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-4 py-3.5 flex items-center justify-between border-b border-[#262626]">
+            <div className="px-4 py-3.5 flex items-center justify-between border-b border-[#262626] shrink-0">
               <div>
                 <p className="text-xs font-bold text-white">{getRoomName(selectedPost.room_id)}</p>
                 {selectedPost.stage && (
@@ -913,7 +1130,7 @@ export default function VisualProfilePage() {
                 <button
                   type="button"
                   onClick={() => setSelectedPost(null)}
-                  className="w-8 h-8 rounded-full bg-[#262626] text-white flex items-center justify-center text-base"
+                  className="w-8 h-8 rounded-full bg-[#262626] text-white flex items-center justify-center text-base hover:bg-[#333]"
                 >
                   ×
                 </button>
@@ -921,26 +1138,86 @@ export default function VisualProfilePage() {
             </div>
 
             {selectedPost.image_url && (
-              <div className="bg-black">
+              <div className="bg-black shrink-0 flex items-center justify-center max-h-[50vh] overflow-hidden">
                 {selectedPost.media_type === 'video' ? (
-                  <video src={selectedPost.image_url} controls autoPlay playsInline className="w-full max-h-[75vh]" />
+                  <video src={selectedPost.image_url} controls autoPlay playsInline className="w-full max-h-[50vh] object-contain" />
                 ) : (
-                  <img src={selectedPost.image_url} alt="" className="w-full max-h-[75vh] object-contain mx-auto" />
+                  <img src={selectedPost.image_url} alt="" className="w-full max-h-[50vh] object-contain mx-auto" />
                 )}
               </div>
             )}
 
-            <div className="px-4 pb-5 space-y-2.5">
+            <div className="px-4 space-y-2 overflow-y-auto flex-1 pb-2">
+              <div className="flex items-center gap-4 text-sm pt-1">
+                <button
+                  type="button"
+                  onClick={toggleLikePost}
+                  className={`flex items-center gap-1.5 font-medium cursor-pointer ${selectedPost.is_liked ? 'text-red-500' : 'text-[#AAA] hover:text-white'}`}
+                >
+                  <span>{selectedPost.is_liked ? '❤️' : '🤍'}</span>
+                  <span className="text-xs">{selectedPost.likes_count}</span>
+                </button>
+                <span className="text-xs text-[#AAA]">💬 {(selectedPost.comments || []).length} Comments</span>
+
+                <button
+                  type="button"
+                  onClick={toggleSavePost}
+                  className={`ml-auto text-xs font-semibold px-3 py-1 rounded-full border transition-colors ${
+                    selectedPost.is_saved
+                      ? 'bg-cyan-500 text-black border-cyan-400'
+                      : 'bg-[#222] text-[#CCC] border-[#333] hover:text-white'
+                  }`}
+                >
+                  {selectedPost.is_saved ? '🔖 Saved' : '📌 Save Post'}
+                </button>
+
+                {selectedPost.cost && (
+                  <span className="text-xs font-bold text-white">£{Number(selectedPost.cost).toLocaleString()}</span>
+                )}
+              </div>
+
               {selectedPost.caption && <p className="text-xs text-[#DDD] leading-relaxed">{selectedPost.caption}</p>}
+              
               {selectedPost.specs && selectedPost.specs.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-1">
+                <div className="flex flex-wrap gap-1.5 pt-1">
                   {selectedPost.specs.map((s, i) => (
-                    <span key={i} className="text-[11px] px-2.5 py-1 rounded bg-[#222] text-[#CCC] font-semibold">
-                      {s}
+                    <span key={i} className="text-[10px] px-2.5 py-1 rounded-full bg-[#222] text-[#CCC] font-semibold">
+                      🏷 {s}
                     </span>
                   ))}
                 </div>
               )}
+
+              {/* Comments Section */}
+              <div className="pt-3 border-t border-[#262626] space-y-2.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#888]">Comments</p>
+                
+                {(selectedPost.comments || []).length === 0 ? (
+                  <p className="text-xs text-[#666] italic">No comments yet. Leave a reaction or comment below!</p>
+                ) : (
+                  <div className="space-y-2 max-h-28 overflow-y-auto">
+                    {selectedPost.comments?.map((c) => (
+                      <div key={c.id} className="text-xs space-y-0.5 bg-[#121212] p-2.5 rounded-xl border border-[#222]">
+                        <span className="font-bold text-white mr-1.5">@{c.user_handle}</span>
+                        <span className="text-[#CCC]">{c.content}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <form onSubmit={handleAddComment} className="flex items-center gap-2 pt-1">
+                  <input
+                    type="text"
+                    placeholder="Add a comment..."
+                    value={commentInput}
+                    onChange={(e) => setCommentInput(e.target.value)}
+                    className="flex-1 px-3 py-2 text-xs bg-[#121212] text-white placeholder-[#666] border border-[#262626] rounded-xl focus:outline-none focus:border-white"
+                  />
+                  <button type="submit" className="px-3.5 py-2 rounded-xl bg-white text-black text-xs font-semibold hover:bg-[#E0E0E0]">
+                    Post
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
         </div>
