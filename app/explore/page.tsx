@@ -7,12 +7,14 @@ import type { User } from '@supabase/supabase-js'
 
 interface HouseProfile {
   user_id: string
+  handle: string | null
   owner_names: string | null
   title: string | null
   era: string | null
   location: string | null
   bio: string | null
   avatar_url: string | null
+  is_private?: boolean | null
 }
 
 interface PostResult {
@@ -33,6 +35,7 @@ export default function ExplorePage() {
   const [houses, setHouses] = useState<HouseProfile[]>([])
   const [posts, setPosts] = useState<PostResult[]>([])
   const [loading, setLoading] = useState(false)
+  const [requestingIds, setRequestingIds] = useState<Record<string, boolean>>({})
 
   const popularTags = [
     'Farrow & Ball',
@@ -53,7 +56,7 @@ export default function ExplorePage() {
 
   const handleSearch = async (term: string) => {
     setSearchQuery(term)
-    const q = term.toLowerCase().trim()
+    const q = term.toLowerCase().trim().replace('@', '') // Strip leading @ if typed
     if (!q) {
       setHouses([])
       setPosts([])
@@ -62,11 +65,11 @@ export default function ExplorePage() {
 
     setLoading(true)
 
-    // 1. Search Houses across titles, eras, locations, bios, and owner names
+    // 1. Search Houses across handles, titles, eras, locations, bios, and owner names
     const { data: houseData } = await supabase
       .from('houses')
       .select('*')
-      .or(`title.ilike.%${q}%,era.ilike.%${q}%,location.ilike.%${q}%,owner_names.ilike.%${q}%,bio.ilike.%${q}%`)
+      .or(`handle.ilike.%${q}%,title.ilike.%${q}%,era.ilike.%${q}%,location.ilike.%${q}%,owner_names.ilike.%${q}%,bio.ilike.%${q}%`)
 
     // 2. Search Rooms by name (e.g., "Dining Room", "Kitchen")
     const { data: roomMatches } = await supabase
@@ -109,6 +112,35 @@ export default function ExplorePage() {
     setLoading(false)
   }
 
+  const handleRequestFollow = async (targetUserId: string, isPrivate: boolean) => {
+    if (!user) {
+      alert('Please sign in to send a follow request.')
+      return
+    }
+
+    setRequestingIds((prev) => ({ ...prev, [targetUserId]: true }))
+
+    // Insert follow request with 'pending' status for private accounts and 'accepted' for public ones
+    const { error } = await supabase.from('follows').insert([
+      { 
+        follower_id: user.id, 
+        following_id: targetUserId, 
+        status: isPrivate ? 'pending' : 'accepted' 
+      }
+    ])
+
+    if (error) {
+      if (error.code === '23505') {
+        alert('You have already sent a follow request or are following this house.')
+      } else {
+        alert('Error sending request: ' + error.message)
+      }
+    } else {
+      alert(isPrivate ? 'Follow request sent!' : 'Now following!')
+    }
+    setRequestingIds((prev) => ({ ...prev, [targetUserId]: false }))
+  }
+
   return (
     <div className="px-5 pt-6 pb-20 space-y-5 bg-[#111111] min-h-screen max-w-xl mx-auto font-sans">
       <div className="space-y-1">
@@ -122,7 +154,7 @@ export default function ExplorePage() {
       <div className="relative">
         <input
           type="text"
-          placeholder="Search rooms, paint brands, products, or usernames..."
+          placeholder="Search by @handle, rooms, paint brands, or tags..."
           value={searchQuery}
           onChange={(e) => handleSearch(e.target.value)}
           className="w-full px-4 py-3.5 pl-10 text-xs bg-[#181818] text-white placeholder-[#666] border border-[#262626] rounded-2xl focus:outline-none focus:border-white shadow-inner"
@@ -187,7 +219,7 @@ export default function ExplorePage() {
       ) : searchQuery && houses.length === 0 && posts.length === 0 ? (
         <div className="p-8 rounded-2xl bg-[#181818] border border-[#262626] text-center space-y-1">
           <p className="text-xs font-bold text-white">No matching results found for &quot;{searchQuery}&quot;</p>
-          <p className="text-[11px] text-[#888]">Try searching for room names, paint brands, or tags.</p>
+          <p className="text-[11px] text-[#888]">Try searching by @handle, room names, or paint brands.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -195,18 +227,46 @@ export default function ExplorePage() {
             <div className="space-y-2.5">
               <h2 className="text-xs font-bold uppercase tracking-wider text-[#888]">Matching Houses</h2>
               <div className="space-y-2">
-                {houses.map((house) => (
-                  <div key={house.user_id} className="p-4 rounded-2xl bg-[#181818] border border-[#262626] flex items-center justify-between">
-                    <div>
-                      <h3 className="text-xs font-bold text-white">{house.title || 'House Passport'}</h3>
-                      <p className="text-[11px] text-[#888]">{house.era} · {house.location || 'UK'}</p>
-                      {house.bio && <p className="text-[11px] text-[#AAA] pt-1 line-clamp-1">{house.bio}</p>}
+                {houses.map((house) => {
+                  const isPrivate = house.is_private === true
+                  const isSelf = user?.id === house.user_id
+
+                  return (
+                    <div key={house.user_id} className="p-4 rounded-2xl bg-[#181818] border border-[#262626] flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xs font-bold text-white">@{house.handle || 'homeowner'}</h3>
+                          {isPrivate && (
+                            <span className="text-[9px] px-2 py-0.5 rounded bg-amber-950/40 text-amber-400 font-semibold border border-amber-900/50">
+                              🔒 Private Passport
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-[#CCC] font-medium">{house.title || 'House Passport'}</p>
+                        <p className="text-[11px] text-[#888]">{house.era} · {house.location || 'UK'}</p>
+                      </div>
+
+                      {isSelf ? (
+                        <Link href="/profile" className="px-3.5 py-1.5 rounded-full bg-[#222] text-[#CCC] text-xs font-semibold border border-[#333]">
+                          Your Profile
+                        </Link>
+                      ) : isPrivate ? (
+                        <button
+                          type="button"
+                          disabled={requestingIds[house.user_id]}
+                          onClick={() => handleRequestFollow(house.user_id, isPrivate)}
+                          className="px-3.5 py-1.5 rounded-full bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-semibold transition-colors"
+                        >
+                          {requestingIds[house.user_id] ? 'Sending...' : 'Request Follow'}
+                        </button>
+                      ) : (
+                        <Link href={`/profile`} className="px-3.5 py-1.5 rounded-full bg-white text-black text-xs font-semibold hover:bg-[#E0E0E0] transition-colors">
+                          View Passport →
+                        </Link>
+                      )}
                     </div>
-                    <Link href={`/profile`} className="px-3.5 py-1.5 rounded-full bg-white text-black text-xs font-semibold">
-                      View Passport →
-                    </Link>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}
