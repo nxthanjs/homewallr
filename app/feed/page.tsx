@@ -129,7 +129,7 @@ export default function CommunityFeedPage() {
     init()
   }, [router])
 
-  const toggleLike = async (postId: string) => {
+  const toggleLike = async (postId: string, postOwnerId: string) => {
     if (!user) return
     const post = posts.find((p) => p.id === postId)
     if (!post) return
@@ -144,7 +144,21 @@ export default function CommunityFeedPage() {
     )
 
     if (newLikedState) {
-      await supabase.from('post_likes').insert([{ post_id: postId, user_id: user.id }])
+      const { error } = await supabase.from('post_likes').insert([{ post_id: postId, user_id: user.id }])
+      if (error) console.error('Error liking post:', error.message)
+
+      // Send notification if liking someone else's post
+      if (postOwnerId !== user.id) {
+        await supabase.from('notifications').insert([
+          {
+            user_id: postOwnerId,
+            actor_id: user.id,
+            actor_handle: post.author_handle,
+            type: 'like',
+            post_id: postId,
+          },
+        ])
+      }
     } else {
       await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user.id)
     }
@@ -170,7 +184,7 @@ export default function CommunityFeedPage() {
     }
   }
 
-  const handleAddComment = async (postId: string, e: React.FormEvent) => {
+  const handleAddComment = async (postId: string, postOwnerId: string, e: React.FormEvent) => {
     e.preventDefault()
     const text = commentInputs[postId]?.trim()
     if (!text || !user) return
@@ -197,7 +211,12 @@ export default function CommunityFeedPage() {
       .select()
       .single()
 
-    if (!error && data) {
+    if (error) {
+      alert('Error posting comment: ' + error.message)
+      return
+    }
+
+    if (data) {
       setPosts((prev) =>
         prev.map((p) => {
           if (p.id === postId) {
@@ -210,6 +229,19 @@ export default function CommunityFeedPage() {
         })
       )
       setCommentInputs({ ...commentInputs, [postId]: '' })
+
+      // Send notification if commenting on someone else's post
+      if (postOwnerId !== user.id) {
+        await supabase.from('notifications').insert([
+          {
+            user_id: postOwnerId,
+            actor_id: user.id,
+            actor_handle: handle,
+            type: 'comment',
+            post_id: postId,
+          },
+        ])
+      }
     }
   }
 
@@ -339,7 +371,7 @@ export default function CommunityFeedPage() {
                   <div className="flex items-center gap-4 text-sm">
                     <button
                       type="button"
-                      onClick={() => toggleLike(post.id)}
+                      onClick={() => toggleLike(post.id, post.user_id)}
                       className={`flex items-center gap-1.5 font-medium cursor-pointer ${post.is_liked ? 'text-red-500' : 'text-[#AAA] hover:text-white'}`}
                     >
                       <span>{post.is_liked ? '❤️' : '🤍'}</span>
@@ -412,7 +444,7 @@ export default function CommunityFeedPage() {
                     </div>
                   )}
 
-                  <form onSubmit={(e) => handleAddComment(post.id, e)} className="flex items-center gap-2">
+                  <form onSubmit={(e) => handleAddComment(post.id, post.user_id, e)} className="flex items-center gap-2">
                     <input
                       type="text"
                       placeholder="Add a comment on this renovation..."
