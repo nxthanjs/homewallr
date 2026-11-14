@@ -7,7 +7,7 @@ export default function BottomNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#181818]/95 backdrop-blur-md border-t border-[#262626] px-6 py-3 flex items-center justify-between max-w-lg mx-auto sm:rounded-t-2xl shadow-lg">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#181818]/95 backdrop-blur-md border-t border-[#262626] px-6 py-3 flex items-center justify-between w-full shadow-lg">
       
       {/* 1. Feed / Home */}
       <Link href="/feed" className="flex flex-col items-center gap-1.5 group">
