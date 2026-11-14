@@ -51,6 +51,12 @@ interface SavedPin {
   created_at: string
 }
 
+interface SocialUserItem {
+  user_id: string
+  handle: string | null
+  title: string | null
+}
+
 export default function VisualProfilePage() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
@@ -68,9 +74,12 @@ export default function VisualProfilePage() {
   const [houseTitle, setHouseTitle] = useState('The 1930s Semi')
   const [houseEra, setHouseEra] = useState('1930s Semi-Detached')
 
-  // Social Stats
+  // Social Stats & Modal State
   const [followersCount, setFollowersCount] = useState(0)
   const [followingCount, setFollowingCount] = useState(0)
+  const [socialModalType, setSocialModalType] = useState<'followers' | 'following' | null>(null)
+  const [socialList, setSocialList] = useState<SocialUserItem[]>([])
+  const [loadingSocial, setLoadingSocial] = useState(false)
 
   // Data collections
   const [rooms, setRooms] = useState<RoomCollection[]>([])
@@ -124,16 +133,18 @@ export default function VisualProfilePage() {
 
       await fetchRooms()
 
-      // Fetch Followers and Following counts from follows table
+      // Fetch Followers and Following counts from follows table (only accepted status if status column exists)
       const { count: followersC } = await supabase
         .from('follows')
         .select('*', { count: 'exact', head: true })
         .eq('following_id', auth.user.id)
+        .eq('status', 'accepted')
 
       const { count: followingC } = await supabase
         .from('follows')
         .select('*', { count: 'exact', head: true })
         .eq('follower_id', auth.user.id)
+        .eq('status', 'accepted')
 
       setFollowersCount(followersC || 0)
       setFollowingCount(followingC || 0)
@@ -163,6 +174,37 @@ export default function VisualProfilePage() {
     }
     loadProfileData()
   }, [router])
+
+  const openSocialModal = async (type: 'followers' | 'following') => {
+    if (!user) return
+    setSocialModalType(type)
+    setLoadingSocial(true)
+
+    // Query follows table based on type
+    const queryField = type === 'followers' ? 'following_id' : 'follower_id'
+    const targetField = type === 'followers' ? 'follower_id' : 'following_id'
+
+    const { data: followsData } = await supabase
+      .from('follows')
+      .select(targetField)
+      .eq(queryField, user.id)
+      .eq('status', 'accepted')
+
+    if (followsData) {
+      const userIds = followsData.map((f: any) => f[targetField])
+      if (userIds.length > 0) {
+        const { data: housesData } = await supabase
+          .from('houses')
+          .select('user_id, handle, title')
+          .in('user_id', userIds)
+
+        setSocialList(housesData || [])
+      } else {
+        setSocialList([])
+      }
+    }
+    setLoadingSocial(false)
+  }
 
   const handleCreateIdea = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -330,7 +372,7 @@ export default function VisualProfilePage() {
           </div>
         </div>
 
-        {/* Stats Row with Followers & Following */}
+        {/* Stats Row with Clickable Followers & Following */}
         <div className="flex items-center justify-between pt-3 text-xs font-medium text-[#A3A3A3] border-t border-[#222]">
           <span>
             Houses: <strong className="font-bold text-white">1</strong>
@@ -341,12 +383,20 @@ export default function VisualProfilePage() {
           <span>
             Posts: <strong className="font-bold text-white">{gridPosts.length}</strong>
           </span>
-          <span>
+          <button
+            type="button"
+            onClick={() => openSocialModal('followers')}
+            className="hover:text-white transition-colors cursor-pointer"
+          >
             Followers: <strong className="font-bold text-white">{followersCount}</strong>
-          </span>
-          <span>
+          </button>
+          <button
+            type="button"
+            onClick={() => openSocialModal('following')}
+            className="hover:text-white transition-colors cursor-pointer"
+          >
             Following: <strong className="font-bold text-white">{followingCount}</strong>
-          </span>
+          </button>
         </div>
       </div>
 
@@ -672,6 +722,57 @@ export default function VisualProfilePage() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Followers / Following Modal */}
+      {socialModalType && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setSocialModalType(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-[#181818] border border-[#333] p-5 space-y-4 shadow-2xl text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-[#262626] pb-3">
+              <h2 className="text-sm font-bold capitalize">{socialModalType}</h2>
+              <button
+                type="button"
+                onClick={() => setSocialModalType(null)}
+                className="text-[#888] hover:text-white text-xl"
+              >
+                ×
+              </button>
+            </div>
+
+            {loadingSocial ? (
+              <p className="text-xs text-[#888] text-center py-6">Loading list...</p>
+            ) : socialList.length === 0 ? (
+              <p className="text-xs text-[#888] text-center py-6">No accounts found.</p>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {socialList.map((item) => (
+                  <div
+                    key={item.user_id}
+                    className="p-3 rounded-xl bg-[#111] border border-[#262626] flex items-center justify-between"
+                  >
+                    <div>
+                      <p className="text-xs font-bold text-white">@{item.handle || 'homeowner'}</p>
+                      <p className="text-[11px] text-[#888]">{item.title || 'House Passport'}</p>
+                    </div>
+                    <Link
+                      href={`/profile`}
+                      onClick={() => setSocialModalType(null)}
+                      className="px-3 py-1 rounded-full bg-white text-black text-xs font-semibold"
+                    >
+                      View
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
