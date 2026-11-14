@@ -80,6 +80,7 @@ function UserProfileContent() {
         }
       }
 
+      let isFollowingViewer = false
       if (authUser && targetUserId) {
         // Check if they follow you
         const { data: followerRow } = await supabase
@@ -100,6 +101,7 @@ function UserProfileContent() {
           .maybeSingle()
 
         setIFollowThem(!!followingRow)
+        isFollowingViewer = !!followingRow
       }
 
       // 1. Fetch target user's house profile
@@ -109,12 +111,25 @@ function UserProfileContent() {
         .eq('user_id', targetUserId)
         .maybeSingle()
 
-      if (houseData) setHouse(houseData)
-      if (houseData && Array.isArray(houseData.pinned_products)) {
-        setPinnedProducts(houseData.pinned_products)
+      if (houseData) {
+        setHouse(houseData)
+        if (Array.isArray(houseData.pinned_products)) {
+          setPinnedProducts(houseData.pinned_products)
+        }
+
+        // 2. Check Privacy: If private and viewer isn't following (and isn't the owner), restrict rooms/posts
+        const isOwner = authUser?.id === targetUserId
+        const isPrivate = houseData.is_private === true
+
+        if (isPrivate && !isOwner && !isFollowingViewer) {
+          setRooms([])
+          setPosts([])
+          setLoading(false)
+          return
+        }
       }
 
-      // 2. Fetch target user's rooms
+      // 3. Fetch target user's rooms
       const { data: roomData } = await supabase
         .from('rooms')
         .select('id, name, floor_level, status, progress')
@@ -123,7 +138,7 @@ function UserProfileContent() {
 
       if (roomData) setRooms(roomData)
 
-      // 3. Fetch target user's posts
+      // 4. Fetch target user's posts strictly scoped to targetUserId
       const { data: postData } = await supabase
         .from('posts')
         .select('*')
@@ -131,18 +146,11 @@ function UserProfileContent() {
         .eq('is_story', false)
         .order('created_at', { ascending: false })
 
-      if (postData && postData.length > 0) {
+      if (postData) {
         setPosts(postData)
-      } else {
-        const { data: allPosts } = await supabase
-          .from('posts')
-          .select('*')
-          .eq('is_story', false)
-          .order('created_at', { ascending: false })
-        if (allPosts) setPosts(allPosts)
       }
 
-      // 4. Fetch follower stats
+      // 5. Fetch follower stats
       const { count: followersC } = await supabase
         .from('follows')
         .select('*', { count: 'exact', head: true })
@@ -187,6 +195,7 @@ function UserProfileContent() {
 
       setIFollowThem(true)
       setFollowersCount((prev) => prev + 1)
+      window.location.reload() // Reload to fetch posts if account was private
     } else {
       alert('Error following user: ' + followError.message)
     }
@@ -221,7 +230,6 @@ function UserProfileContent() {
     setFollowLoading(true)
     setShowDropdown(false)
 
-    // 1. Insert into blocked_users
     await supabase.from('blocked_users').insert([
       {
         blocker_id: currentAuthUser.id,
@@ -229,7 +237,6 @@ function UserProfileContent() {
       },
     ])
 
-    // 2. Remove any follow relationships between both users
     await supabase
       .from('follows')
       .delete()
@@ -241,6 +248,8 @@ function UserProfileContent() {
 
   if (loading) return <div className="p-6 text-xs text-[#888] bg-[#111] min-h-screen">Loading passport...</div>
   if (!house) return <div className="p-6 text-xs text-[#888] bg-[#111] min-h-screen">House passport not found.</div>
+
+  const isPrivateLocked = house.is_private && currentAuthUser?.id !== targetUserId && !iFollowThem
 
   return (
     <div className="pb-16 bg-[#111111] min-h-screen text-[#EDEDED] font-sans">
@@ -334,21 +343,34 @@ function UserProfileContent() {
         </div>
       </div>
 
-      <div className="pt-4 px-3 max-w-5xl mx-auto">
-        <div className="columns-2 sm:columns-3 md:columns-4 gap-3 space-y-3">
-          {posts.map((post) => (
-            <div key={post.id} className="break-inside-avoid">
-              <button
-                type="button"
-                onClick={() => setSelectedPost(post)}
-                className="relative w-full rounded-2xl overflow-hidden bg-[#1A1A1A] group text-left block shadow-md"
-              >
-                {post.image_url && <img src={post.image_url} alt="" className="w-full object-cover group-hover:scale-105 transition-transform" />}
-              </button>
-            </div>
-          ))}
+      {isPrivateLocked ? (
+        <div className="mx-5 mt-8 p-10 rounded-2xl bg-[#181818] border border-[#262626] text-center space-y-2 max-w-md mx-auto">
+          <p className="text-sm font-bold text-white">This House Passport is Private</p>
+          <p className="text-xs text-[#888]">Follow this account to view their rooms and renovation posts.</p>
         </div>
-      </div>
+      ) : (
+        <div className="pt-4 px-3 max-w-5xl mx-auto">
+          {posts.length === 0 ? (
+            <div className="mx-5 p-10 rounded-2xl bg-[#181818] border border-[#262626] text-center">
+              <p className="text-xs font-medium text-[#888]">No posts from this user yet.</p>
+            </div>
+          ) : (
+            <div className="columns-2 sm:columns-3 md:columns-4 gap-3 space-y-3">
+              {posts.map((post) => (
+                <div key={post.id} className="break-inside-avoid">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPost(post)}
+                    className="relative w-full rounded-2xl overflow-hidden bg-[#1A1A1A] group text-left block shadow-md"
+                  >
+                    {post.image_url && <img src={post.image_url} alt="" className="w-full object-cover group-hover:scale-105 transition-transform" />}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
