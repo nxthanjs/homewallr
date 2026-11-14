@@ -56,6 +56,7 @@ export default function TimelinePage() {
     const { data: postData } = await supabase
       .from('posts')
       .select('*')
+      .eq('user_id', auth.user.id) // <-- Added strict user scope
       .eq('is_story', false)
       .order('created_at', { ascending: false })
     if (postData) setPosts(postData)

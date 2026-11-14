@@ -170,6 +170,7 @@ export default function VisualProfilePage() {
       const { data: postsData } = await supabase
         .from('posts')
         .select('*')
+        .eq('user_id', auth.user.id) // <-- Added strict user scope
         .order('created_at', { ascending: false })
 
       if (postsData) {

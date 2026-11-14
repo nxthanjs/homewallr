@@ -260,7 +260,7 @@ export default function ExplorePage() {
                           {requestingIds[house.user_id] ? 'Sending...' : 'Request Follow'}
                         </button>
                       ) : (
-                        <Link href={`/profile`} className="px-3.5 py-1.5 rounded-full bg-white text-black text-xs font-semibold hover:bg-[#E0E0E0] transition-colors">
+                        <Link href={`/profile/${house.user_id}`} className="px-3.5 py-1.5 rounded-full bg-white text-black text-xs font-semibold hover:bg-[#E0E0E0] transition-colors">
                           View Passport →
                         </Link>
                       )}

@@ -23,6 +23,11 @@ export default function SettingsHubPage() {
   const [savingPrivacy, setSavingPrivacy] = useState(false)
   const [privacyMsg, setPrivacyMsg] = useState<string | null>(null)
 
+  // Handle State
+  const [handle, setHandle] = useState('')
+  const [savingHandle, setSavingHandle] = useState(false)
+  const [handleMsg, setHandleMsg] = useState<{ text: string; isError: boolean } | null>(null)
+
   // Blocked Accounts State
   const [blockedList, setBlockedList] = useState<BlockedRecord[]>([])
   const [blockError, setBlockError] = useState<string | null>(null)
@@ -39,15 +44,20 @@ export default function SettingsHubPage() {
       if (!auth.user) return router.push('/login')
       setUser(auth.user)
 
-      // Fetch House Privacy
+      // Fetch House Privacy & Handle
       const { data: house } = await supabase
         .from('houses')
-        .select('is_private')
+        .select('is_private, handle')
         .eq('user_id', auth.user.id)
         .maybeSingle()
 
-      if (house && typeof house.is_private === 'boolean') {
-        setIsPrivate(house.is_private)
+      if (house) {
+        if (typeof house.is_private === 'boolean') {
+          setIsPrivate(house.is_private)
+        }
+        if (house.handle) {
+          setHandle(house.handle)
+        }
       }
 
       // Fetch Blocked Accounts
@@ -79,6 +89,28 @@ export default function SettingsHubPage() {
     } else {
       setPrivacyMsg('Privacy settings updated successfully.')
       setTimeout(() => setPrivacyMsg(null), 3000)
+    }
+  }
+
+  const handleUpdateHandle = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user) return
+    setSavingHandle(true)
+    setHandleMsg(null)
+
+    const cleanHandle = handle.trim().replace(/^@/, '')
+
+    const { error } = await supabase
+      .from('houses')
+      .upsert({ user_id: user.id, handle: cleanHandle }, { onConflict: 'user_id' })
+
+    setSavingHandle(false)
+    if (error) {
+      setHandleMsg({ text: 'Failed to update handle: ' + error.message, isError: true })
+    } else {
+      setHandle(cleanHandle)
+      setHandleMsg({ text: 'Handle updated successfully.', isError: false })
+      setTimeout(() => setHandleMsg(null), 3000)
     }
   }
 
@@ -204,7 +236,37 @@ export default function SettingsHubPage() {
           </Link>
         </div>
 
-        {/* 2. Privacy & Social Settings */}
+        {/* 2. Your Handle Settings */}
+        <div className="rounded-2xl bg-[#181818] border border-[#262626] p-4 space-y-3.5 shadow-sm">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#888]">Your Handle</h2>
+          <form onSubmit={handleUpdateHandle} className="space-y-3">
+            <div className="flex items-center gap-2 bg-[#111] border border-[#262626] rounded-xl px-3 py-2">
+              <span className="text-xs text-[#888]">@</span>
+              <input
+                type="text"
+                required
+                value={handle}
+                onChange={(e) => setHandle(e.target.value)}
+                placeholder="username"
+                className="w-full bg-transparent text-xs text-white focus:outline-none"
+              />
+            </div>
+            {handleMsg && (
+              <p className={`text-[11px] font-medium ${handleMsg.isError ? 'text-red-400' : 'text-cyan-400'}`}>
+                {handleMsg.text}
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={savingHandle}
+              className="px-4 py-2 bg-white hover:bg-[#E0E0E0] text-black text-xs font-semibold rounded-xl transition-colors"
+            >
+              {savingHandle ? 'Saving...' : 'Update Handle'}
+            </button>
+          </form>
+        </div>
+
+        {/* 3. Privacy & Social Settings */}
         <div className="rounded-2xl bg-[#181818] border border-[#262626] p-4 space-y-3.5 shadow-sm">
           <div className="flex items-center justify-between border-b border-[#222] pb-2.5">
             <div>
@@ -232,7 +294,7 @@ export default function SettingsHubPage() {
           )}
         </div>
 
-        {/* 3. Blocked Accounts Manager with 24h Cooldown */}
+        {/* 4. Blocked Accounts Manager with 24h Cooldown */}
         <div className="rounded-2xl bg-[#181818] border border-[#262626] p-4 space-y-3 shadow-sm">
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#888]">Blocked Accounts</h2>
           <p className="text-[11px] text-[#888] leading-relaxed">
@@ -280,7 +342,7 @@ export default function SettingsHubPage() {
           )}
         </div>
 
-        {/* 4. Account Security (Strong Password) */}
+        {/* 5. Account Security (Strong Password) */}
         <div className="rounded-2xl bg-[#181818] border border-[#262626] p-4 space-y-3.5 shadow-sm">
           <h2 className="text-xs font-bold uppercase tracking-wider text-[#888]">Account Security</h2>
           <form onSubmit={handleChangePassword} className="space-y-3">
@@ -324,7 +386,7 @@ export default function SettingsHubPage() {
           </form>
         </div>
 
-        {/* 5. Sign Out */}
+        {/* 6. Sign Out */}
         <div className="pt-2">
           <button
             type="button"
@@ -1057,10 +1119,402 @@ export default function ExplorePage() {
     </div>
   )
 }
+==> app/profile/[id]/page.tsx <==
+'use client'
+
+import { useState, useEffect, Suspense, useRef } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+import type { PinnedProduct } from '@/app/profile/page'
+
+interface RoomCollection {
+  id: string
+  name: string
+  floor_level: string | null
+  status: string
+  progress: number
+}
+
+interface GridPost {
+  id: string
+  room_id: string | null
+  stage: string | null
+  caption: string | null
+  image_url: string | null
+  media_type: 'image' | 'video' | null
+  specs: string[] | null
+  cost: number | null
+  created_at: string
+}
+
+function UserProfileContent() {
+  const params = useParams()
+  const router = useRouter()
+  const targetUserId = params?.id as string
+
+  const [loading, setLoading] = useState(true)
+  const [house, setHouse] = useState<any>(null)
+  const [rooms, setRooms] = useState<RoomCollection[]>([])
+  const [posts, setPosts] = useState<GridPost[]>([])
+  const [pinnedProducts, setPinnedProducts] = useState<PinnedProduct[]>([])
+  const [followersCount, setFollowersCount] = useState(0)
+  const [followingCount, setFollowingCount] = useState(0)
+  const [selectedPost, setSelectedPost] = useState<GridPost | null>(null)
+
+  // Follow & Action States
+  const [currentAuthUser, setCurrentAuthUser] = useState<any>(null)
+  const [currentUserHandle, setCurrentUserHandle] = useState<string>('homeowner')
+  const [theyFollowMe, setTheyFollowMe] = useState(false)
+  const [iFollowThem, setIFollowThem] = useState(false)
+  const [followLoading, setFollowLoading] = useState(false)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  useEffect(() => {
+    if (!targetUserId) return
+
+    const loadTargetProfile = async () => {
+      setLoading(true)
+
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (authUser) {
+        setCurrentAuthUser(authUser)
+
+        // Fetch current user's handle for notifications
+        const { data: myHouse } = await supabase
+          .from('houses')
+          .select('handle')
+          .eq('user_id', authUser.id)
+          .maybeSingle()
+
+        if (myHouse?.handle) {
+          setCurrentUserHandle(myHouse.handle)
+        }
+      }
+
+      let isFollowingViewer = false
+      if (authUser && targetUserId) {
+        // Check if they follow you
+        const { data: followerRow } = await supabase
+          .from('follows')
+          .select('*')
+          .eq('follower_id', targetUserId)
+          .eq('following_id', authUser.id)
+          .maybeSingle()
+
+        setTheyFollowMe(!!followerRow)
+
+        // Check if you follow them
+        const { data: followingRow } = await supabase
+          .from('follows')
+          .select('*')
+          .eq('follower_id', authUser.id)
+          .eq('following_id', targetUserId)
+          .maybeSingle()
+
+        setIFollowThem(!!followingRow)
+        isFollowingViewer = !!followingRow
+      }
+
+      // 1. Fetch target user's house profile
+      const { data: houseData } = await supabase
+        .from('houses')
+        .select('*')
+        .eq('user_id', targetUserId)
+        .maybeSingle()
+
+      if (!houseData) {
+        setLoading(false)
+        return
+      }
+
+      setHouse(houseData)
+      if (Array.isArray(houseData.pinned_products)) {
+        setPinnedProducts(houseData.pinned_products)
+      }
+
+      // 2. Check Privacy: If private and viewer isn't following (and isn't the owner), restrict rooms/posts
+      const isOwner = authUser?.id === targetUserId
+      const isPrivate = houseData.is_private === true
+
+      if (isPrivate && !isOwner && !isFollowingViewer) {
+        setRooms([])
+        setPosts([])
+        setLoading(false)
+        return
+      }
+
+      // 3. Fetch target user's rooms strictly scoped to targetUserId
+      const { data: roomData } = await supabase
+        .from('rooms')
+        .select('id, name, floor_level, status, progress')
+        .eq('user_id', targetUserId)
+        .order('created_at', { ascending: true })
+
+      if (roomData) setRooms(roomData)
+
+      // 4. Fetch target user's posts strictly scoped to targetUserId
+      const { data: postData } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('user_id', targetUserId)
+        .eq('is_story', false)
+        .order('created_at', { ascending: false })
+
+      if (postData) {
+        setPosts(postData)
+      } else {
+        setPosts([])
+      }
+
+      // 5. Fetch follower stats
+      const { count: followersC } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', targetUserId)
+        .eq('status', 'accepted')
+
+      const { count: followingC } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('follower_id', targetUserId)
+        .eq('status', 'accepted')
+
+      setFollowersCount(followersC || 0)
+      setFollowingCount(followingC || 0)
+      setLoading(false)
+    }
+
+    loadTargetProfile()
+  }, [targetUserId])
+
+  const handleFollowBack = async () => {
+    if (!currentAuthUser || !targetUserId) return
+    setFollowLoading(true)
+
+    const { error: followError } = await supabase.from('follows').insert([
+      {
+        follower_id: currentAuthUser.id,
+        following_id: targetUserId,
+        status: 'accepted',
+      },
+    ])
+
+    if (!followError) {
+      await supabase.from('notifications').insert([
+        {
+          user_id: targetUserId,
+          actor_id: currentAuthUser.id,
+          actor_handle: currentUserHandle,
+          type: 'follow',
+        },
+      ])
+
+      setIFollowThem(true)
+      setFollowersCount((prev) => prev + 1)
+      window.location.reload()
+    } else {
+      alert('Error following user: ' + followError.message)
+    }
+
+    setFollowLoading(false)
+  }
+
+  const handleUnfollow = async () => {
+    if (!currentAuthUser || !targetUserId) return
+    setFollowLoading(true)
+    setShowDropdown(false)
+
+    const { error } = await supabase
+      .from('follows')
+      .delete()
+      .eq('follower_id', currentAuthUser.id)
+      .eq('following_id', targetUserId)
+
+    setFollowLoading(false)
+    if (!error) {
+      setIFollowThem(false)
+      setFollowersCount((prev) => Math.max(0, prev - 1))
+    } else {
+      alert('Error unfollowing user: ' + error.message)
+    }
+  }
+
+  const handleBlockUser = async () => {
+    if (!currentAuthUser || !targetUserId) return
+    if (!confirm('Are you sure you want to block this user? This will also remove them from your followers.')) return
+    
+    setFollowLoading(true)
+    setShowDropdown(false)
+
+    await supabase.from('blocked_users').insert([
+      {
+        blocker_id: currentAuthUser.id,
+        blocked_id: targetUserId,
+      },
+    ])
+
+    await supabase
+      .from('follows')
+      .delete()
+      .or(`and(follower_id.eq.${currentAuthUser.id},following_id.eq.${targetUserId}),and(follower_id.eq.${targetUserId},following_id.eq.${currentAuthUser.id})`)
+
+    setFollowLoading(false)
+    router.push('/feed')
+  }
+
+  if (loading) return <div className="p-6 text-xs text-[#888] bg-[#111] min-h-screen">Loading passport...</div>
+  if (!house) return <div className="p-6 text-xs text-[#888] bg-[#111] min-h-screen">House passport not found.</div>
+
+  const isPrivateLocked = house.is_private && currentAuthUser?.id !== targetUserId && !iFollowThem
+
+  return (
+    <div className="pb-16 bg-[#111111] min-h-screen text-[#EDEDED] font-sans">
+      <div className="px-5 pt-6 pb-4 space-y-4 max-w-2xl mx-auto">
+        <Link href="/feed" className="text-xs font-medium text-[#888] hover:text-white">
+          ← Back to Feed
+        </Link>
+
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-5 min-w-0">
+            <div className="relative shrink-0 rounded-full p-0.5 bg-gradient-to-tr from-cyan-500 via-purple-500 to-pink-500">
+              {house.avatar_url ? (
+                <img src={house.avatar_url} alt="" className="w-24 h-24 rounded-full object-cover border-2 border-[#111]" />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-[#1E1E1E] text-white flex items-center justify-center text-3xl font-bold border-2 border-[#111]">
+                  {(house.handle || house.owner_names || 'U')[0].toUpperCase()}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1 min-w-0">
+              <h1 className="text-xl font-bold tracking-tight text-white truncate">@{house.handle || 'homeowner'}</h1>
+              <p className="text-sm font-medium text-[#A3A3A3] truncate">{house.owner_names || house.title || 'House Passport'}</p>
+              {house.bio && <p className="text-xs text-[#888] line-clamp-2">{house.bio}</p>}
+              {house.location && <p className="text-xs font-medium text-[#777]">{house.location}</p>}
+            </div>
+          </div>
+
+          {/* Follow Actions & Menu */}
+          {currentAuthUser && currentAuthUser.id !== targetUserId && (
+            <div className="shrink-0 relative" ref={dropdownRef}>
+              {theyFollowMe && !iFollowThem ? (
+                <button
+                  type="button"
+                  onClick={handleFollowBack}
+                  disabled={followLoading}
+                  className="px-4 py-2 rounded-full bg-white hover:bg-neutral-200 text-black text-xs font-bold transition-colors shadow-sm"
+                >
+                  {followLoading ? 'Following...' : 'Follow Back'}
+                </button>
+              ) : iFollowThem ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowDropdown(!showDropdown)}
+                    className="px-4 py-2 rounded-full bg-[#222] hover:bg-[#2A2A2A] text-[#AAA] hover:text-white text-xs font-semibold border border-[#333] transition-colors"
+                  >
+                    Following ▾
+                  </button>
+
+                  {showDropdown && (
+                    <div className="absolute right-0 mt-2 w-36 rounded-xl bg-[#1A1A1A] border border-[#333] shadow-xl py-1 z-50">
+                      <button
+                        type="button"
+                        onClick={handleUnfollow}
+                        disabled={followLoading}
+                        className="w-full text-left px-4 py-2 text-xs text-[#CCC] hover:bg-[#262626] hover:text-white transition-colors"
+                      >
+                        Unfollow
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleBlockUser}
+                        disabled={followLoading}
+                        className="w-full text-left px-4 py-2 text-xs text-red-400 hover:bg-red-950/40 transition-colors"
+                      >
+                        Block Account
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleFollowBack}
+                  disabled={followLoading}
+                  className="px-4 py-2 rounded-full bg-white hover:bg-neutral-200 text-black text-xs font-bold transition-colors shadow-sm"
+                >
+                  {followLoading ? 'Following...' : 'Follow'}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between pt-3 text-xs font-medium text-[#A3A3A3] border-t border-[#222]">
+          <span>Rooms: <strong className="font-bold text-white">{rooms.length}</strong></span>
+          <span>Posts: <strong className="font-bold text-white">{posts.length}</strong></span>
+          <span>Followers: <strong className="font-bold text-white">{followersCount}</strong></span>
+          <span>Following: <strong className="font-bold text-white">{followingCount}</strong></span>
+        </div>
+      </div>
+
+      {isPrivateLocked ? (
+        <div className="mx-5 mt-8 p-10 rounded-2xl bg-[#181818] border border-[#262626] text-center space-y-2 max-w-md mx-auto">
+          <p className="text-sm font-bold text-white">This House Passport is Private</p>
+          <p className="text-xs text-[#888]">Follow this account to view their rooms and renovation posts.</p>
+        </div>
+      ) : (
+        <div className="pt-4 px-3 max-w-5xl mx-auto">
+          {posts.length === 0 ? (
+            <div className="mx-5 p-10 rounded-2xl bg-[#181818] border border-[#262626] text-center">
+              <p className="text-xs font-medium text-[#888]">No posts from this user yet.</p>
+            </div>
+          ) : (
+            <div className="columns-2 sm:columns-3 md:columns-4 gap-3 space-y-3">
+              {posts.map((post) => (
+                <div key={post.id} className="break-inside-avoid">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPost(post)}
+                    className="relative w-full rounded-2xl overflow-hidden bg-[#1A1A1A] group text-left block shadow-md"
+                  >
+                    {post.image_url && <img src={post.image_url} alt="" className="w-full object-cover group-hover:scale-105 transition-transform" />}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function UserProfilePage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-xs text-[#888] bg-[#111] min-h-screen">Loading...</div>}>
+      <UserProfileContent />
+    </Suspense>
+  )
+}
 ==> app/profile/page.tsx <==
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -1115,6 +1569,8 @@ interface SocialUserItem {
   user_id: string
   handle: string | null
   title: string | null
+  owner_names: string | null
+  avatar_url: string | null
 }
 
 export default function VisualProfilePage() {
@@ -1133,6 +1589,12 @@ export default function VisualProfilePage() {
   const [bio, setBio] = useState('')
   const [houseTitle, setHouseTitle] = useState('The 1930s Semi')
   const [houseEra, setHouseEra] = useState('1930s Semi-Detached')
+
+  // Avatar & Story Menu State
+  const [showAvatarMenu, setShowAvatarMenu] = useState(false)
+  const avatarMenuRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
 
   // Social Stats & Modal State
   const [followersCount, setFollowersCount] = useState(0)
@@ -1159,6 +1621,17 @@ export default function VisualProfilePage() {
   const [showPinProductModal, setShowPinProductModal] = useState(false)
   const [pinningProduct, setPinningProduct] = useState(false)
   const [newProduct, setNewProduct] = useState({ name: '', brand: '', price: '', room: '', url: '' })
+
+  // Close avatar menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (avatarMenuRef.current && !avatarMenuRef.current.contains(e.target as Node)) {
+        setShowAvatarMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const fetchRooms = async () => {
     const { data: roomData } = await supabase
@@ -1193,7 +1666,6 @@ export default function VisualProfilePage() {
 
       await fetchRooms()
 
-      // Fetch Followers and Following counts from follows table (only accepted status if status column exists)
       const { count: followersC } = await supabase
         .from('follows')
         .select('*', { count: 'exact', head: true })
@@ -1235,12 +1707,43 @@ export default function VisualProfilePage() {
     loadProfileData()
   }, [router])
 
+  // Handle Avatar Image Upload
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+    setUploadingAvatar(true)
+    setShowAvatarMenu(false)
+
+    const ext = file.name.split('.').pop() || 'jpg'
+    const path = `avatars/${user.id}-${Date.now()}.${ext}`
+
+    const { error: uploadErr } = await supabase.storage.from('post-images').upload(path, file)
+    if (uploadErr) {
+      alert('Error uploading avatar: ' + uploadErr.message)
+      setUploadingAvatar(false)
+      return
+    }
+
+    const { data } = supabase.storage.from('post-images').getPublicUrl(path)
+    const newAvatarUrl = data.publicUrl
+
+    const { error: updateErr } = await supabase
+      .from('houses')
+      .upsert({ user_id: user.id, avatar_url: newAvatarUrl }, { onConflict: 'user_id' })
+
+    setUploadingAvatar(false)
+    if (!updateErr) {
+      setAvatarUrl(newAvatarUrl)
+    } else {
+      alert('Error updating profile picture: ' + updateErr.message)
+    }
+  }
+
   const openSocialModal = async (type: 'followers' | 'following') => {
     if (!user) return
     setSocialModalType(type)
     setLoadingSocial(true)
 
-    // Query follows table based on type
     const queryField = type === 'followers' ? 'following_id' : 'follower_id'
     const targetField = type === 'followers' ? 'follower_id' : 'following_id'
 
@@ -1255,7 +1758,7 @@ export default function VisualProfilePage() {
       if (userIds.length > 0) {
         const { data: housesData } = await supabase
           .from('houses')
-          .select('user_id, handle, title')
+          .select('user_id, handle, title, owner_names, avatar_url')
           .in('user_id', userIds)
 
         setSocialList(housesData || [])
@@ -1368,7 +1871,6 @@ export default function VisualProfilePage() {
 
   return (
     <div className="pb-16 bg-[#111111] min-h-screen text-[#EDEDED] font-sans">
-      {/* 1. Profile Identity Section with Larger Avatar & Prominent @Handle */}
       <div className="px-5 pt-6 pb-4 space-y-4 max-w-2xl mx-auto">
         <div className="flex items-center justify-between">
           <p className="text-[10px] font-bold tracking-widest uppercase text-[#888]">
@@ -1391,35 +1893,90 @@ export default function VisualProfilePage() {
         </div>
 
         <div className="flex items-center gap-5">
-          {/* Larger Profile Picture Container */}
-          <button
-            type="button"
-            onClick={() => hasStories && setStoryIndex(0)}
-            className={`relative shrink-0 rounded-full p-0.5 transition-transform ${
-              hasStories
-                ? 'bg-gradient-to-tr from-cyan-500 via-purple-500 to-pink-500 cursor-pointer active:scale-95 animate-rgb'
-                : 'bg-transparent cursor-default'
-            }`}
-          >
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt={ownerNames || handle}
-                className="w-24 h-24 rounded-full object-cover border-2 border-[#111]"
-              />
-            ) : (
-              <div className="w-24 h-24 rounded-full bg-[#1E1E1E] text-white flex items-center justify-center text-3xl font-bold tracking-tight border-2 border-[#111]">
-                {displayInitial}
+          {/* Hidden File Input for Avatar */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleAvatarChange}
+            accept="image/*"
+            className="hidden"
+          />
+
+          {/* Profile Picture with Clickable Menu */}
+          <div className="relative" ref={avatarMenuRef}>
+            <button
+              type="button"
+              onClick={() => setShowAvatarMenu(!showAvatarMenu)}
+              className={`relative shrink-0 rounded-full p-0.5 transition-transform cursor-pointer ${
+                hasStories
+                  ? 'bg-gradient-to-tr from-cyan-500 via-purple-500 to-pink-500 active:scale-95 animate-rgb'
+                  : 'bg-[#333]'
+              }`}
+            >
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={ownerNames || handle}
+                  className="w-24 h-24 rounded-full object-cover border-2 border-[#111]"
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-[#1E1E1E] text-white flex items-center justify-center text-3xl font-bold tracking-tight border-2 border-[#111]">
+                  {displayInitial}
+                </div>
+              )}
+              {uploadingAvatar && (
+                <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center text-[10px] font-bold text-white">
+                  Saving...
+                </div>
+              )}
+            </button>
+
+            {hasStories && (
+              <button
+                type="button"
+                onClick={() => setStoryIndex(0)}
+                className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-[#111] shadow"
+              >
+                {activeStories.length} Story
+              </button>
+            )}
+
+            {/* Profile Picture Popup Menu */}
+            {showAvatarMenu && (
+              <div className="absolute left-0 mt-2 w-48 rounded-2xl bg-[#1A1A1A] border border-[#333] shadow-2xl py-1.5 z-50 text-white">
+                {hasStories && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAvatarMenu(false)
+                      setStoryIndex(0)
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-xs font-semibold text-[#CCC] hover:bg-[#262626] hover:text-white transition-colors"
+                  >
+                    👁 View Active Story
+                  </button>
+                )}
+                <Link
+                  href="/upload"
+                  onClick={() => setShowAvatarMenu(false)}
+                  className="block w-full text-left px-4 py-2.5 text-xs font-semibold text-[#CCC] hover:bg-[#262626] hover:text-white transition-colors border-t border-[#222]"
+                >
+                  + Post a 24h Story
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAvatarMenu(false)
+                    fileInputRef.current?.click()
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-xs font-semibold text-cyan-400 hover:bg-[#262626] transition-colors border-t border-[#222]"
+                >
+                  📷 Change Profile Photo
+                </button>
               </div>
             )}
-            {hasStories && (
-              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-[#111]">
-                {activeStories.length} Story
-              </span>
-            )}
-          </button>
+          </div>
 
-          {/* Prominent Handle First, Name Underneath */}
           <div className="space-y-1 min-w-0">
             <h1 className="text-xl font-bold tracking-tight text-white truncate leading-tight">
               @{handle}
@@ -1432,7 +1989,6 @@ export default function VisualProfilePage() {
           </div>
         </div>
 
-        {/* Stats Row with Clickable Followers & Following */}
         <div className="flex items-center justify-between pt-3 text-xs font-medium text-[#A3A3A3] border-t border-[#222]">
           <span>
             Houses: <strong className="font-bold text-white">1</strong>
@@ -1460,7 +2016,6 @@ export default function VisualProfilePage() {
         </div>
       </div>
 
-      {/* 2. Milestone Band */}
       <div className="bg-[#161616] border-y border-[#222] px-5 py-4 space-y-3">
         <div className="max-w-2xl mx-auto space-y-3 w-full">
           <div className="flex items-center justify-between">
@@ -1484,7 +2039,6 @@ export default function VisualProfilePage() {
         </div>
       </div>
 
-      {/* 3. Clean Underlined Tabs */}
       <div className="px-5 pt-3 border-b border-[#222] flex items-center justify-center gap-8 bg-[#111] sticky top-[57px] z-40">
         <button
           type="button"
@@ -1523,7 +2077,6 @@ export default function VisualProfilePage() {
         </button>
       </div>
 
-      {/* TAB 1: PINTEREST-STYLE MASONRY GRID */}
       {activeTab === 'posts' && (
         <div className="pt-4 px-3 max-w-5xl mx-auto space-y-4">
           {rooms.length > 0 && (
@@ -1567,7 +2120,6 @@ export default function VisualProfilePage() {
               </Link>
             </div>
           ) : (
-            /* Pinterest Masonry Layout */
             <div className="columns-2 sm:columns-3 md:columns-4 gap-3 space-y-3">
               {visiblePosts.map((post) => {
                 const isVideo = post.media_type === 'video'
@@ -1631,7 +2183,6 @@ export default function VisualProfilePage() {
         </div>
       )}
 
-      {/* TAB 2: MY HOUSE */}
       {activeTab === 'house' && (
         <div className="px-5 pt-4 max-w-2xl mx-auto space-y-4">
           <div className="rounded-2xl bg-[#181818] border border-[#262626] p-5 space-y-3.5">
@@ -1702,7 +2253,6 @@ export default function VisualProfilePage() {
         </div>
       )}
 
-      {/* TAB 3: PINNED IDEAS MOODBOARD */}
       {activeTab === 'pinned_ideas' && (
         <div className="px-5 pt-4 max-w-2xl mx-auto space-y-4">
           <div className="flex items-center justify-between">
@@ -1785,7 +2335,6 @@ export default function VisualProfilePage() {
         </div>
       )}
 
-      {/* Followers / Following Modal */}
       {socialModalType && (
         <div
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4"
@@ -1812,31 +2361,48 @@ export default function VisualProfilePage() {
               <p className="text-xs text-[#888] text-center py-6">No accounts found.</p>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {socialList.map((item) => (
-                  <div
-                    key={item.user_id}
-                    className="p-3 rounded-xl bg-[#111] border border-[#262626] flex items-center justify-between"
-                  >
-                    <div>
-                      <p className="text-xs font-bold text-white">@{item.handle || 'homeowner'}</p>
-                      <p className="text-[11px] text-[#888]">{item.title || 'House Passport'}</p>
-                    </div>
-                    <Link
-                      href={`/profile`}
-                      onClick={() => setSocialModalType(null)}
-                      className="px-3 py-1 rounded-full bg-white text-black text-xs font-semibold"
+                {socialList.map((item: any) => {
+                  const displayName = item.handle || item.owner_names || 'homeowner'
+                  const initial = displayName[0].toUpperCase()
+                  return (
+                    <div
+                      key={item.user_id}
+                      className="p-3 rounded-xl bg-[#111] border border-[#262626] flex items-center justify-between"
                     >
-                      View
-                    </Link>
-                  </div>
-                ))}
+                      <div className="flex items-center gap-3 min-w-0">
+                        {item.avatar_url ? (
+                          <img
+                            src={item.avatar_url}
+                            alt=""
+                            className="w-10 h-10 rounded-full object-cover border border-[#262626] shrink-0"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-[#222] text-white flex items-center justify-center text-xs font-bold border border-[#262626] shrink-0">
+                            {initial}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-white truncate">@{displayName}</p>
+                          <p className="text-[11px] text-[#888] truncate">{item.title || 'House Passport'}</p>
+                        </div>
+                      </div>
+
+                      <Link
+                        href={`/profile/${item.user_id}`}
+                        onClick={() => setSocialModalType(null)}
+                        className="px-3 py-1 rounded-full bg-white text-black text-xs font-semibold shrink-0 ml-2"
+                      >
+                        View
+                      </Link>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* Lightbox Modal */}
       {selectedPost && (
         <div
           className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xs flex items-center justify-center p-4"
@@ -1893,7 +2459,6 @@ export default function VisualProfilePage() {
         </div>
       )}
 
-      {/* Full-Screen 24h Story Viewer */}
       {storyIndex !== null && activeStories[storyIndex] && (
         <div
           className="fixed inset-0 z-50 bg-black text-white flex flex-col justify-between p-5"
@@ -1947,117 +2512,6 @@ export default function VisualProfilePage() {
             )}
           </div>
 
-          {activeStories[storyIndex].caption && activeStories[storyIndex].image_url && (
-            <p className="text-center text-xs bg-black/80 px-5 py-3 rounded-2xl font-medium">
-              {activeStories[storyIndex].caption}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Modal: Pin New Idea */}
-      {showPinIdeaModal && (
-        <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
-          onClick={() => setShowPinIdeaModal(false)}
-        >
-          <div
-            className="w-full max-w-sm rounded-2xl bg-[#181818] border border-[#333] p-5 space-y-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-white">Pin an Inspiration Idea</h2>
-              <button type="button" onClick={() => setShowPinIdeaModal(false)} className="text-[#888] text-xl">
-                ×
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateIdea} className="space-y-3.5">
-              <input
-                type="text"
-                required
-                placeholder="Idea title (e.g., Shaker Kitchen Island)"
-                value={newIdea.title}
-                onChange={(e) => setNewIdea({ ...newIdea, title: e.target.value })}
-                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
-              />
-              <select
-                value={newIdea.category}
-                onChange={(e) => setNewIdea({ ...newIdea, category: e.target.value })}
-                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white border border-[#262626] rounded-xl"
-              >
-                <option value="Interior Look">Interior Look</option>
-                <option value="Exterior & Garden">Exterior & Garden</option>
-                <option value="Kitchen & Dining">Kitchen & Dining</option>
-                <option value="Bathroom">Bathroom</option>
-                <option value="Paint & Materials">Paint & Materials</option>
-              </select>
-              <label className="block cursor-pointer px-3.5 py-3 text-xs bg-[#111] border border-dashed border-[#333] rounded-xl text-[#888]">
-                {ideaFile ? `Selected: ${ideaFile.name}` : '+ Attach inspiration screenshot (optional)'}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setIdeaFile(e.target.files?.[0] || null)}
-                  className="hidden"
-                />
-              </label>
-              <input
-                type="url"
-                placeholder="Source link (optional https://...)"
-                value={newIdea.source_url}
-                onChange={(e) => setNewIdea({ ...newIdea, source_url: e.target.value })}
-                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
-              />
-              <textarea
-                rows={2}
-                placeholder="Why you like it..."
-                value={newIdea.notes}
-                onChange={(e) => setNewIdea({ ...newIdea, notes: e.target.value })}
-                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl resize-none"
-              />
-              <button
-                type="submit"
-                disabled={pinningIdea}
-                className="w-full py-3 bg-white text-black text-xs font-bold rounded-xl shadow-sm hover:bg-[#E0E0E0]"
-              >
-                {pinningIdea ? 'Pinning...' : 'Save to Pinned Ideas'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal: Pin Product Spec */}
-      {showPinProductModal && (
-        <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
-          onClick={() => setShowPinProductModal(false)}
-        >
-          <div
-            className="w-full max-w-sm rounded-2xl bg-[#181818] border border-[#333] p-5 space-y-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-white">Pin Paint or Product Spec</h2>
-              <button type="button" onClick={() => setShowPinProductModal(false)} className="text-[#888] text-xl">
-                ×
-              </button>
-            </div>
-            <form onSubmit={handleAddPinnedProduct} className="space-y-3">
-              <input
-                type="text"
-                required
-                placeholder="Product / Paint name"
-                value={newProduct.name}
-                onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
-              />
-              <div className="grid grid-cols-2 gap-2.5">
-                <input
-                  type="text"
-                  placeholder="Brand"
-                  value={newProduct.brand}
-                  onChange={(e) => setNewProduct({ ...newProduct, brand: e.target.value })}
 
 ==> app/feed/page.tsx <==
 'use client'
@@ -3527,302 +3981,112 @@ body {
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import type { User } from '@supabase/supabase-js'
 
 interface NotificationItem {
   id: string
-  type: 'like' | 'comment' | 'follow' | 'accept_follow'
-  actor_id?: string
-  actor_handle: string
-  actor_avatar?: string
-  content_preview?: string
+  actor_id: string | null
+  actor_handle: string | null
+  type: 'follow' | 'like' | 'comment' | 'accept_follow'
+  content_preview?: string | null
   created_at: string
-}
-
-interface FollowRequestItem {
-  id: string
-  follower_id: string
-  created_at: string
-  actor_handle?: string
 }
 
 export default function NotificationsPage() {
-  const router = useRouter()
-  const [user, setUser] = useState<User | null>(null)
-  const [activeTab, setActiveTab] = useState<'activity' | 'requests'>('activity')
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
-  const [pendingRequests, setPendingRequests] = useState<FollowRequestItem[]>([])
   const [loading, setLoading] = useState(true)
 
-  const loadNotificationsAndRequests = async (currentUserId: string) => {
-    // 1. Fetch pending follow requests for private accounts
-    const { data: requests } = await supabase
-      .from('follows')
-      .select('id, follower_id, created_at')
-      .eq('following_id', currentUserId)
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false })
-
-    if (requests) {
-      const formattedRequests = await Promise.all(
-        requests.map(async (req) => {
-          const { data: house } = await supabase
-            .from('houses')
-            .select('handle')
-            .eq('user_id', req.follower_id)
-            .maybeSingle()
-
-          return {
-            ...req,
-            actor_handle: house?.handle || `user_${req.follower_id.slice(0, 5)}`,
-          }
-        })
-      )
-      setPendingRequests(formattedRequests)
-      if (formattedRequests.length > 0) {
-        setActiveTab('requests')
-      }
-    } else {
-      setPendingRequests([])
-    }
-
-    // 2. Fetch actual accepted followers to generate real "new follower" notifications with their ID
-    const { data: followers } = await supabase
-      .from('follows')
-      .select('follower_id, created_at')
-      .eq('following_id', currentUserId)
-      .eq('status', 'accepted')
-      .order('created_at', { ascending: false })
-
-    const followerNotifs: NotificationItem[] = await Promise.all(
-      (followers || []).map(async (f, i) => {
-        const { data: house } = await supabase
-          .from('houses')
-          .select('handle')
-          .eq('user_id', f.follower_id)
-          .maybeSingle()
-
-        return {
-          id: `follow-${f.follower_id}-${i}`,
-          type: 'follow' as const,
-          actor_id: f.follower_id,
-          actor_handle: house?.handle || `user_${f.follower_id.slice(0, 5)}`,
-          created_at: f.created_at,
-        }
-      })
-    )
-
-    // Curated / demo social activity items
-    const demoNotifs: NotificationItem[] = [
-      {
-        id: 'n-1',
-        type: 'like',
-        actor_handle: 'sarah_reno',
-        content_preview: 'liked your post about 1930s hallway panelling',
-        created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-      },
-      {
-        id: 'n-2',
-        type: 'comment',
-        actor_handle: 'victorian_renovator',
-        content_preview: 'commented: "Looks so crisp! What paint finish is that?"',
-        created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-      },
-      {
-        id: 'n-3',
-        type: 'accept_follow',
-        actor_handle: 'pandy_builds',
-        content_preview: 'accepted your follow request.',
-        created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
-      },
-    ]
-
-    setNotifications([...followerNotifs, ...demoNotifs])
-    setLoading(false)
-  }
-
   useEffect(() => {
-    const initNotifications = async () => {
-      const { data: auth } = await supabase.auth.getUser()
-      if (!auth.user) return router.push('/login')
-      setUser(auth.user)
+    const fetchNotifications = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
 
-      await loadNotificationsAndRequests(auth.user.id)
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (data) {
+        setNotifications(data)
+      }
+      setLoading(false)
     }
 
-    initNotifications()
-  }, [router])
+    fetchNotifications()
+  }, [])
 
-  const handleAccept = async (requestId: string) => {
-    const { error } = await supabase
-      .from('follows')
-      .update({ status: 'accepted' })
-      .eq('id', requestId)
-
-    if (!error && user) {
-      await loadNotificationsAndRequests(user.id)
-      setActiveTab('activity')
-    } else {
-      alert('Error accepting request: ' + (error?.message || 'Unknown error'))
-    }
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#111] text-[#EDEDED] font-sans flex items-center justify-center">
+        <p className="text-xs text-[#888]">Loading activity...</p>
+      </div>
+    )
   }
-
-  const handleDecline = async (requestId: string) => {
-    const { error } = await supabase
-      .from('follows')
-      .delete()
-      .eq('id', requestId)
-
-    if (!error) {
-      setPendingRequests((prev) => prev.filter((r) => r.id !== requestId))
-    } else {
-      alert('Error declining request: ' + error.message)
-    }
-  }
-
-  if (loading) return <div className="p-6 text-xs text-[#888]">Loading activity...</div>
 
   return (
-    <div className="px-5 pt-6 pb-20 space-y-5 bg-[#111111] min-h-screen max-w-xl mx-auto font-sans">
-      <div className="space-y-1">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-[#888]">
-          Activity
-        </p>
-        <h1 className="text-lg font-bold text-white">Notifications</h1>
-      </div>
+    <div className="min-h-screen bg-[#111] text-[#EDEDED] font-sans pb-20">
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-[#222] pb-3">
+          <h1 className="text-lg font-bold text-white tracking-tight">Activity</h1>
+          <Link href="/feed" className="text-xs font-medium text-[#888] hover:text-white">
+            ← Back to Feed
+          </Link>
+        </div>
 
-      {/* Tab Switcher */}
-      <div className="flex gap-2 border-b border-[#222] pb-3">
-        <button
-          type="button"
-          onClick={() => setActiveTab('activity')}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-            activeTab === 'activity' ? 'bg-white text-black' : 'bg-[#1C1C1C] text-[#888]'
-          }`}
-        >
-          Recent Activity ({notifications.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('requests')}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors flex items-center gap-1.5 ${
-            activeTab === 'requests' ? 'bg-white text-black' : 'bg-[#1C1C1C] text-[#888]'
-          }`}
-        >
-          <span>Follow Requests</span>
-          {pendingRequests.length > 0 && (
-            <span className="w-4 h-4 rounded-full bg-amber-500 text-black text-[9px] font-bold flex items-center justify-center">
-              {pendingRequests.length}
-            </span>
-          )}
-        </button>
-      </div>
+        {/* Notifications List */}
+        {notifications.length === 0 ? (
+          <div className="text-center py-12 text-xs text-[#777]">
+            No notifications yet.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {notifications.map((notif) => {
+              const icon = notif.type === 'follow' ? '👤' : notif.type === 'like' ? '❤️' : '💬'
 
-      {/* TAB 1: FOLLOW REQUESTS */}
-      {activeTab === 'requests' && (
-        <div className="space-y-2.5">
-          {pendingRequests.length === 0 ? (
-            <div className="p-10 rounded-2xl bg-[#181818] border border-[#262626] text-center space-y-1">
-              <p className="text-xs text-[#888]">No pending follow requests.</p>
-            </div>
-          ) : (
-            <div className="space-y-2.5">
-              {pendingRequests.map((req) => (
+              return (
                 <div
-                  key={req.id}
-                  className="p-4 rounded-2xl bg-[#181818] border border-amber-900/40 flex items-center justify-between gap-3 shadow-sm"
+                  key={notif.id}
+                  className="flex items-center justify-between p-3.5 rounded-2xl bg-[#1A1A1A] border border-[#262626]"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-amber-950/50 border border-amber-800 text-amber-400 flex items-center justify-center text-xs font-bold shrink-0">
-                      🔒
+                    <div className="w-9 h-9 rounded-full bg-[#222] border border-[#333] text-white flex items-center justify-center text-sm shrink-0">
+                      {icon}
                     </div>
                     <div className="space-y-0.5">
                       <p className="text-xs text-white leading-snug">
-                        <strong className="font-bold">@{req.actor_handle}</strong> wants to follow your private passport.
+                        <Link href={`/profile/${notif.actor_id}`} className="font-bold hover:underline">
+                          @{notif.actor_handle || 'user'}
+                        </Link>{' '}
+                        <span className="text-[#CCC]">
+                          {notif.type === 'follow' && 'now follows you.'}
+                          {notif.type === 'like' && notif.content_preview}
+                          {notif.type === 'comment' && notif.content_preview}
+                          {notif.type === 'accept_follow' && notif.content_preview}
+                        </span>
                       </p>
-                      <p className="text-[10px] text-[#777]">Pending approval</p>
+                      <p className="text-[10px] text-[#777]">Recent activity</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => handleAccept(req.id)}
-                      className="px-3 py-1.5 rounded-full bg-white hover:bg-[#E0E0E0] text-black text-xs font-semibold transition-colors"
+                  {notif.actor_id && (
+                    <Link
+                      href={`/profile/${notif.actor_id}`}
+                      className="px-3.5 py-1.5 rounded-full bg-white text-black text-xs font-semibold shrink-0 hover:bg-neutral-200 transition-colors"
                     >
-                      Accept
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDecline(req.id)}
-                      className="px-3 py-1.5 rounded-full bg-[#222] hover:bg-[#2A2A2A] text-red-400 text-xs font-semibold border border-[#333] transition-colors"
-                    >
-                      Decline
-                    </button>
-                  </div>
+                      View
+                    </Link>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+              )
+            })}
+          </div>
+        )}
 
-      {/* TAB 2: RECENT ACTIVITY */}
-      {activeTab === 'activity' && (
-        <div className="space-y-2.5">
-          {notifications.length === 0 ? (
-            <div className="p-10 rounded-2xl bg-[#181818] border border-[#262626] text-center space-y-2">
-              <p className="text-xs text-[#888]">No activity yet. When builders follow you or interact with your posts, it will show up here.</p>
-            </div>
-          ) : (
-            <div className="space-y-2.5">
-              {notifications.map((notif) => {
-                let icon = '💬'
-                if (notif.type === 'like') icon = '❤️'
-                if (notif.type === 'follow') icon = '👤'
-                if (notif.type === 'accept_follow') icon = '✨'
-
-                return (
-                  <div
-                    key={notif.id}
-                    className="p-4 rounded-2xl bg-[#181818] border border-[#262626] flex items-center justify-between gap-3 shadow-sm hover:border-[#333] transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-[#222] border border-[#333] text-white flex items-center justify-center text-sm shrink-0">
-                        {icon}
-                      </div>
-                      <div className="space-y-0.5">
-                        <p className="text-xs text-white leading-snug">
-                          <strong className="font-bold">@{notif.actor_handle}</strong>{' '}
-                          <span className="text-[#CCC]">
-                            {notif.type === 'follow' && 'now follows you.'}
-                            {notif.type === 'like' && notif.content_preview}
-                            {notif.type === 'comment' && notif.content_preview}
-                            {notif.type === 'accept_follow' && notif.content_preview}
-                          </span>
-                        </p>
-                        <p className="text-[10px] text-[#777]">Recent activity</p>
-                      </div>
-                    </div>
-
-                    {notif.type === 'follow' && notif.actor_id && (
-                      <Link
-                        href={`/profile/${notif.actor_id}`}
-                        className="px-3.5 py-1.5 rounded-full bg-white text-black text-xs font-semibold shrink-0"
-                      >
-                        View
-                      </Link>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      )}
+      </div>
     </div>
   )
 }
@@ -5548,44 +5812,44 @@ export default function BottomNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#181818]/95 backdrop-blur-md border-t border-[#262626] py-3 shadow-lg">
-      <div className="max-w-xs mx-auto flex items-center justify-center gap-5 w-full">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#181818]/95 backdrop-blur-md border-t border-[#262626] py-4.5 shadow-xl">
+      <div className="max-w-md mx-auto flex items-center justify-around w-full px-4">
         
         {/* 1. Feed / Home */}
-        <Link href="/feed" className="flex flex-col items-center gap-1 group px-1">
-          <svg className={`w-6 h-6 transition-transform group-hover:scale-110 ${pathname === '/feed' ? 'text-cyan-400' : 'text-[#888]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75">
+        <Link href="/feed" className="flex flex-col items-center gap-1.5 group px-1">
+          <svg className={`w-7 h-7 transition-transform group-hover:scale-110 ${pathname === '/feed' ? 'text-cyan-400' : 'text-[#888]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75">
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
           </svg>
-          <span className="text-xs font-medium text-[#EDEDED]">Feed</span>
+          <span className={`text-xs font-semibold ${pathname === '/feed' ? 'text-white' : 'text-[#A3A3A3]'}`}>Feed</span>
         </Link>
 
         {/* 2. Explore / Search */}
-        <Link href="/explore" className="flex flex-col items-center gap-1 group px-1">
-          <svg className={`w-6 h-6 transition-transform group-hover:scale-110 ${pathname === '/explore' ? 'text-purple-400' : 'text-[#888]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75">
+        <Link href="/explore" className="flex flex-col items-center gap-1.5 group px-1">
+          <svg className={`w-7 h-7 transition-transform group-hover:scale-110 ${pathname === '/explore' ? 'text-purple-400' : 'text-[#888]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <span className="text-xs font-medium text-[#EDEDED]">Explore</span>
+          <span className={`text-xs font-semibold ${pathname === '/explore' ? 'text-white' : 'text-[#A3A3A3]'}`}>Explore</span>
         </Link>
 
         {/* 3. Center Action Post Button */}
-        <Link href="/upload" className="w-11 h-11 rounded-full bg-gradient-to-tr from-cyan-500 via-purple-500 to-pink-500 text-white flex items-center justify-center text-2xl font-bold shadow-md hover:scale-105 transition-transform shrink-0 mx-1">
+        <Link href="/upload" className="w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-500 via-purple-500 to-pink-500 text-white flex items-center justify-center text-3xl font-bold shadow-lg hover:scale-105 transition-transform shrink-0">
           +
         </Link>
 
         {/* 4. Notifications / Activity */}
-        <Link href="/notifications" className="flex flex-col items-center gap-1 group px-1">
-          <svg className={`w-6 h-6 transition-transform group-hover:scale-110 ${pathname === '/notifications' ? 'text-amber-400' : 'text-[#888]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75">
+        <Link href="/notifications" className="flex flex-col items-center gap-1.5 group px-1">
+          <svg className={`w-7 h-7 transition-transform group-hover:scale-110 ${pathname === '/notifications' ? 'text-amber-400' : 'text-[#888]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
-          <span className="text-xs font-medium text-[#EDEDED]">Activity</span>
+          <span className={`text-xs font-semibold ${pathname === '/notifications' ? 'text-white' : 'text-[#A3A3A3]'}`}>Activity</span>
         </Link>
 
         {/* 5. Profile / House Passport */}
-        <Link href="/profile" className="flex flex-col items-center gap-1 group px-1">
-          <svg className={`w-6 h-6 transition-transform group-hover:scale-110 ${pathname === '/profile' ? 'text-pink-400' : 'text-[#888]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75">
+        <Link href="/profile" className="flex flex-col items-center gap-1.5 group px-1">
+          <svg className={`w-7 h-7 transition-transform group-hover:scale-110 ${pathname === '/profile' ? 'text-pink-400' : 'text-[#888]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75">
             <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
-          <span className="text-xs font-medium text-[#EDEDED]">Profile</span>
+          <span className={`text-xs font-semibold ${pathname === '/profile' ? 'text-white' : 'text-[#A3A3A3]'}`}>Profile</span>
         </Link>
       </div>
     </nav>
