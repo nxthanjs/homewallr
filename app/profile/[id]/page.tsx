@@ -64,6 +64,8 @@ function UserProfileContent() {
     if (!targetUserId) return
 
     const loadTargetProfile = async () => {
+      setLoading(true)
+
       const { data: { user: authUser } } = await supabase.auth.getUser()
       if (authUser) {
         setCurrentAuthUser(authUser)
@@ -111,25 +113,28 @@ function UserProfileContent() {
         .eq('user_id', targetUserId)
         .maybeSingle()
 
-      if (houseData) {
-        setHouse(houseData)
-        if (Array.isArray(houseData.pinned_products)) {
-          setPinnedProducts(houseData.pinned_products)
-        }
-
-        // 2. Check Privacy: If private and viewer isn't following (and isn't the owner), restrict rooms/posts
-        const isOwner = authUser?.id === targetUserId
-        const isPrivate = houseData.is_private === true
-
-        if (isPrivate && !isOwner && !isFollowingViewer) {
-          setRooms([])
-          setPosts([])
-          setLoading(false)
-          return
-        }
+      if (!houseData) {
+        setLoading(false)
+        return
       }
 
-      // 3. Fetch target user's rooms
+      setHouse(houseData)
+      if (Array.isArray(houseData.pinned_products)) {
+        setPinnedProducts(houseData.pinned_products)
+      }
+
+      // 2. Check Privacy: If private and viewer isn't following (and isn't the owner), restrict rooms/posts
+      const isOwner = authUser?.id === targetUserId
+      const isPrivate = houseData.is_private === true
+
+      if (isPrivate && !isOwner && !isFollowingViewer) {
+        setRooms([])
+        setPosts([])
+        setLoading(false)
+        return
+      }
+
+      // 3. Fetch target user's rooms strictly scoped to targetUserId
       const { data: roomData } = await supabase
         .from('rooms')
         .select('id, name, floor_level, status, progress')
@@ -148,6 +153,8 @@ function UserProfileContent() {
 
       if (postData) {
         setPosts(postData)
+      } else {
+        setPosts([])
       }
 
       // 5. Fetch follower stats
@@ -195,7 +202,7 @@ function UserProfileContent() {
 
       setIFollowThem(true)
       setFollowersCount((prev) => prev + 1)
-      window.location.reload() // Reload to fetch posts if account was private
+      window.location.reload()
     } else {
       alert('Error following user: ' + followError.message)
     }
