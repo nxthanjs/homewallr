@@ -1,42 +1,30 @@
-'use client'
+7        const lowerExisting = new Set(existingNames.map((n) => n.toLowerCase()))
+        const newRoomsToInsert = rooms
+          .filter((r) => !lowerExisting.has(r.name.toLowerCase()))
+          .map((r) => ({
+            user_id: userId,
+            name: r.name,
+            floor_level: 'Ground Floor',
+            status: 'Planning',
+            progress: 0,
+            width_m: r.width_m || null,
+            length_m: r.length_m || null,
+          }))
 
-import { useState, useEffect, createContext, useContext } from 'react'
-import Link from 'next/link'
+        if (newRoomsToInsert.length > 0) {
+          await supabase.from('rooms').insert(newRoomsToInsert)
+        }
+      }
 
-interface FloorPlanContextType {
-  activeFloor: string
-  setActiveFloor: (floor: string) => void
-}
-
-const FloorPlanContext = createContext<FloorPlanContextType>({
-  activeFloor: 'Ground Floor',
-  setActiveFloor: () => {},
-})
-
-export function FloorPlanProvider({ children }: { children: React.ReactNode }) {
-  const [activeFloor, setActiveFloor] = useState('Ground Floor')
-  return (
-    <FloorPlanContext.Provider value={{ activeFloor, setActiveFloor }}>
-      {children}
-    </FloorPlanContext.Provider>
-  )
-}
-
-export function useFloorPlan() {
-  return useContext(FloorPlanContext)
-}
-
-export function useFloorPlanJob() {
-  const [jobStatus, setJobStatus] = useState<string | null>(null)
-  const [jobResult, setJobResult] = useState<any>(null)
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [elapsedSeconds, setElapsedSeconds] = useState(0)
-  const [stepText, setStepText] = useState('')
-  const [latestPlanUrl, setLatestPlanUrl] = useState<string | null>(null)
-
-  const startGeneration = (...args: any[]) => {
-    setIsGenerating(true)
-    setJobStatus('running')
+      setLatestPlanUrl(image2D)
+      setJobStatus('success')
+    } catch (err: any) {
+      console.error(err)
+      alert('Floor plan generation error: ' + err.message)
+      setJobStatus('error')
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   return {
@@ -54,31 +42,4 @@ export function useFloorPlanJob() {
     setLatestPlanUrl,
     startGeneration,
   }
-}
-
-export function BottomNav() {
-  const [pathname, setPathname] = useState('')
-
-  useEffect(() => {
-    setPathname(window.location.pathname)
-  }, [])
-
-  if (pathname === '/login') return null
-
-  return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#161A16]/90 backdrop-blur-md border-t border-[#2A332A] px-6 py-3 flex justify-around items-center text-xs text-[#9C9A92]">
-      <Link href="/" className={`hover:text-[#8FA680] ${pathname === '/' ? 'text-[#8FA680] font-semibold' : ''}`}>
-        House
-      </Link>
-      <Link href="/floorplan" className={`hover:text-[#8FA680] ${pathname === '/floorplan' ? 'text-[#8FA680] font-semibold' : ''}`}>
-        Floor Plan
-      </Link>
-      <Link href="/upload" className={`hover:text-[#8FA680] ${pathname === '/upload' ? 'text-[#8FA680] font-semibold' : ''}`}>
-        + Update
-      </Link>
-      <Link href="/settings" className={`hover:text-[#8FA680] ${pathname === '/settings' ? 'text-[#8FA680] font-semibold' : ''}`}>
-        Settings
-      </Link>
-    </div>
-  )
 }
