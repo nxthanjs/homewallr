@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import BottomNav from '@/components/BottomNav'
 
 export const metadata: Metadata = {
@@ -62,8 +63,10 @@ export default function RootLayout({
           {children}
         </main>
 
-        {/* Fixed Bottom Navigation Bar with Multi-Colored Icons */}
-        <BottomNav />
+        {/* Fixed Bottom Navigation Bar wrapped in Suspense to satisfy Next.js prerendering */}
+        <Suspense fallback={null}>
+          <BottomNav />
+        </Suspense>
       </body>
     </html>
   )
