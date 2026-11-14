@@ -133,7 +133,6 @@ export default function VisualProfilePage() {
 
       await fetchRooms()
 
-      // Fetch Followers and Following counts from follows table (only accepted status if status column exists)
       const { count: followersC } = await supabase
         .from('follows')
         .select('*', { count: 'exact', head: true })
@@ -180,7 +179,6 @@ export default function VisualProfilePage() {
     setSocialModalType(type)
     setLoadingSocial(true)
 
-    // Query follows table based on type
     const queryField = type === 'followers' ? 'following_id' : 'follower_id'
     const targetField = type === 'followers' ? 'follower_id' : 'following_id'
 
@@ -308,7 +306,6 @@ export default function VisualProfilePage() {
 
   return (
     <div className="pb-16 bg-[#111111] min-h-screen text-[#EDEDED] font-sans">
-      {/* 1. Profile Identity Section with Larger Avatar & Prominent @Handle */}
       <div className="px-5 pt-6 pb-4 space-y-4 max-w-2xl mx-auto">
         <div className="flex items-center justify-between">
           <p className="text-[10px] font-bold tracking-widest uppercase text-[#888]">
@@ -331,7 +328,6 @@ export default function VisualProfilePage() {
         </div>
 
         <div className="flex items-center gap-5">
-          {/* Larger Profile Picture Container */}
           <button
             type="button"
             onClick={() => hasStories && setStoryIndex(0)}
@@ -359,7 +355,6 @@ export default function VisualProfilePage() {
             )}
           </button>
 
-          {/* Prominent Handle First, Name Underneath */}
           <div className="space-y-1 min-w-0">
             <h1 className="text-xl font-bold tracking-tight text-white truncate leading-tight">
               @{handle}
@@ -372,7 +367,6 @@ export default function VisualProfilePage() {
           </div>
         </div>
 
-        {/* Stats Row with Clickable Followers & Following */}
         <div className="flex items-center justify-between pt-3 text-xs font-medium text-[#A3A3A3] border-t border-[#222]">
           <span>
             Houses: <strong className="font-bold text-white">1</strong>
@@ -400,7 +394,6 @@ export default function VisualProfilePage() {
         </div>
       </div>
 
-      {/* 2. Milestone Band */}
       <div className="bg-[#161616] border-y border-[#222] px-5 py-4 space-y-3">
         <div className="max-w-2xl mx-auto space-y-3 w-full">
           <div className="flex items-center justify-between">
@@ -424,7 +417,6 @@ export default function VisualProfilePage() {
         </div>
       </div>
 
-      {/* 3. Clean Underlined Tabs */}
       <div className="px-5 pt-3 border-b border-[#222] flex items-center justify-center gap-8 bg-[#111] sticky top-[57px] z-40">
         <button
           type="button"
@@ -463,7 +455,6 @@ export default function VisualProfilePage() {
         </button>
       </div>
 
-      {/* TAB 1: PINTEREST-STYLE MASONRY GRID */}
       {activeTab === 'posts' && (
         <div className="pt-4 px-3 max-w-5xl mx-auto space-y-4">
           {rooms.length > 0 && (
@@ -507,7 +498,6 @@ export default function VisualProfilePage() {
               </Link>
             </div>
           ) : (
-            /* Pinterest Masonry Layout */
             <div className="columns-2 sm:columns-3 md:columns-4 gap-3 space-y-3">
               {visiblePosts.map((post) => {
                 const isVideo = post.media_type === 'video'
@@ -571,7 +561,6 @@ export default function VisualProfilePage() {
         </div>
       )}
 
-      {/* TAB 2: MY HOUSE */}
       {activeTab === 'house' && (
         <div className="px-5 pt-4 max-w-2xl mx-auto space-y-4">
           <div className="rounded-2xl bg-[#181818] border border-[#262626] p-5 space-y-3.5">
@@ -642,7 +631,6 @@ export default function VisualProfilePage() {
         </div>
       )}
 
-      {/* TAB 3: PINNED IDEAS MOODBOARD */}
       {activeTab === 'pinned_ideas' && (
         <div className="px-5 pt-4 max-w-2xl mx-auto space-y-4">
           <div className="flex items-center justify-between">
@@ -725,7 +713,6 @@ export default function VisualProfilePage() {
         </div>
       )}
 
-      {/* Followers / Following Modal */}
       {socialModalType && (
         <div
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4"
@@ -762,7 +749,7 @@ export default function VisualProfilePage() {
                       <p className="text-[11px] text-[#888]">{item.title || 'House Passport'}</p>
                     </div>
                     <Link
-                      href={`/profile`}
+                      href={`/profile/${item.user_id}`}
                       onClick={() => setSocialModalType(null)}
                       className="px-3 py-1 rounded-full bg-white text-black text-xs font-semibold"
                     >
@@ -776,7 +763,6 @@ export default function VisualProfilePage() {
         </div>
       )}
 
-      {/* Lightbox Modal */}
       {selectedPost && (
         <div
           className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xs flex items-center justify-center p-4"
@@ -833,7 +819,6 @@ export default function VisualProfilePage() {
         </div>
       )}
 
-      {/* Full-Screen 24h Story Viewer */}
       {storyIndex !== null && activeStories[storyIndex] && (
         <div
           className="fixed inset-0 z-50 bg-black text-white flex flex-col justify-between p-5"
@@ -895,7 +880,6 @@ export default function VisualProfilePage() {
         </div>
       )}
 
-      {/* Modal: Pin New Idea */}
       {showPinIdeaModal && (
         <div
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
@@ -967,7 +951,6 @@ export default function VisualProfilePage() {
         </div>
       )}
 
-      {/* Modal: Pin Product Spec */}
       {showPinProductModal && (
         <div
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
