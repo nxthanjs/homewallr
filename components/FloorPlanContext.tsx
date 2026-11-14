@@ -27,6 +27,13 @@ export function useFloorPlan() {
   return useContext(FloorPlanContext)
 }
 
+// Restored missing export for AI floor plan generation
+export function useFloorPlanJob() {
+  const [jobStatus, setJobStatus] = useState<string | null>(null)
+  const [jobResult, setJobResult] = useState<any>(null)
+  return { jobStatus, setJobStatus, jobResult, setJobResult }
+}
+
 export function BottomNav() {
   const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
@@ -35,7 +42,6 @@ export function BottomNav() {
     setMounted(true)
   }, [])
 
-  // Prevent running router hooks during server-side build prerendering
   if (!mounted || pathname === '/login') return null
 
   return (
