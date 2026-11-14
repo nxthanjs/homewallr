@@ -27,11 +27,35 @@ export function useFloorPlan() {
   return useContext(FloorPlanContext)
 }
 
-// Restored missing export for AI floor plan generation
+// Fully typed implementation for AI floor plan job state
 export function useFloorPlanJob() {
   const [jobStatus, setJobStatus] = useState<string | null>(null)
   const [jobResult, setJobResult] = useState<any>(null)
-  return { jobStatus, setJobStatus, jobResult, setJobResult }
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const [stepText, setStepText] = useState('')
+  const [latestPlanUrl, setLatestPlanUrl] = useState<string | null>(null)
+
+  const startGeneration = () => {
+    setIsGenerating(true)
+    setJobStatus('running')
+  }
+
+  return {
+    jobStatus,
+    setJobStatus,
+    jobResult,
+    setJobResult,
+    isGenerating,
+    setIsGenerating,
+    elapsedSeconds,
+    setElapsedSeconds,
+    stepText,
+    setStepText,
+    latestPlanUrl,
+    setLatestPlanUrl,
+    startGeneration,
+  }
 }
 
 export function BottomNav() {
