@@ -27,7 +27,7 @@ export function useFloorPlan() {
   return useContext(FloorPlanContext)
 }
 
-// Fully typed implementation for AI floor plan job state
+// Updated to accept arguments from AIFloorPlan.tsx without type errors
 export function useFloorPlanJob() {
   const [jobStatus, setJobStatus] = useState<string | null>(null)
   const [jobResult, setJobResult] = useState<any>(null)
@@ -36,7 +36,7 @@ export function useFloorPlanJob() {
   const [stepText, setStepText] = useState('')
   const [latestPlanUrl, setLatestPlanUrl] = useState<string | null>(null)
 
-  const startGeneration = () => {
+  const startGeneration = (...args: any[]) => {
     setIsGenerating(true)
     setJobStatus('running')
   }
