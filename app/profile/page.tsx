@@ -56,6 +56,7 @@ interface SocialUserItem {
   handle: string | null
   title: string | null
   owner_names: string | null
+  avatar_url: string | null
 }
 
 export default function VisualProfilePage() {
@@ -194,7 +195,7 @@ export default function VisualProfilePage() {
       if (userIds.length > 0) {
         const { data: housesData } = await supabase
           .from('houses')
-          .select('user_id, handle, title, owner_names')
+          .select('user_id, handle, title, owner_names, avatar_url')
           .in('user_id', userIds)
 
         setSocialList(housesData || [])
@@ -742,19 +743,34 @@ export default function VisualProfilePage() {
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {socialList.map((item: any) => {
                   const displayName = item.handle || item.owner_names || 'homeowner'
+                  const initial = displayName[0].toUpperCase()
                   return (
                     <div
                       key={item.user_id}
                       className="p-3 rounded-xl bg-[#111] border border-[#262626] flex items-center justify-between"
                     >
-                      <div>
-                        <p className="text-xs font-bold text-white">@{displayName}</p>
-                        <p className="text-[11px] text-[#888]">{item.title || 'House Passport'}</p>
+                      <div className="flex items-center gap-3 min-w-0">
+                        {item.avatar_url ? (
+                          <img
+                            src={item.avatar_url}
+                            alt=""
+                            className="w-10 h-10 rounded-full object-cover border border-[#262626] shrink-0"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-[#222] text-white flex items-center justify-center text-xs font-bold border border-[#262626] shrink-0">
+                            {initial}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-white truncate">@{displayName}</p>
+                          <p className="text-[11px] text-[#888] truncate">{item.title || 'House Passport'}</p>
+                        </div>
                       </div>
+
                       <Link
                         href={`/profile/${item.user_id}`}
                         onClick={() => setSocialModalType(null)}
-                        className="px-3 py-1 rounded-full bg-white text-black text-xs font-semibold"
+                        className="px-3 py-1 rounded-full bg-white text-black text-xs font-semibold shrink-0 ml-2"
                       >
                         View
                       </Link>
