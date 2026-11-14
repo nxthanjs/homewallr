@@ -1,123 +1,337 @@
 ==> app/settings/page.tsx <==
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import type { User } from '@supabase/supabase-js'
 
-export default function LoginPage() {
+interface BlockedRecord {
+  id: string
+  blocked_id: string
+  unblocked_at?: string | null
+}
+
+export default function SettingsHubPage() {
   const router = useRouter()
-  const [isSignUp, setIsSignUp] = useState(false)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setMessage(null)
+  // Privacy & Settings State
+  const [isPrivate, setIsPrivate] = useState(false)
+  const [savingPrivacy, setSavingPrivacy] = useState(false)
+  const [privacyMsg, setPrivacyMsg] = useState<string | null>(null)
 
-    if (isSignUp) {
-      const { error } = await supabase.auth.signUp({ email, password })
-      setLoading(false)
-      if (error) {
-        setMessage(error.message)
-      } else {
-        setMessage('Account created! Check your email or sign in now.')
-        setIsSignUp(false)
+  // Blocked Accounts State
+  const [blockedList, setBlockedList] = useState<BlockedRecord[]>([])
+  const [blockError, setBlockError] = useState<string | null>(null)
+
+  // Password state
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [updatingPass, setUpdatingPass] = useState(false)
+  const [passMsg, setPassMsg] = useState<{ text: string; isError: boolean } | null>(null)
+
+  useEffect(() => {
+    const init = async () => {
+      const { data: auth } = await supabase.auth.getUser()
+      if (!auth.user) return router.push('/login')
+      setUser(auth.user)
+
+      // Fetch House Privacy
+      const { data: house } = await supabase
+        .from('houses')
+        .select('is_private')
+        .eq('user_id', auth.user.id)
+        .maybeSingle()
+
+      if (house && typeof house.is_private === 'boolean') {
+        setIsPrivate(house.is_private)
       }
+
+      // Fetch Blocked Accounts
+      const { data: blocks } = await supabase
+        .from('blocked_users')
+        .select('*')
+        .eq('blocker_id', auth.user.id)
+
+      if (blocks) setBlockedList(blocks)
+
+      setLoading(false)
+    }
+    init()
+  }, [router])
+
+  const handleTogglePrivacy = async (val: boolean) => {
+    if (!user) return
+    setIsPrivate(val)
+    setSavingPrivacy(true)
+    setPrivacyMsg(null)
+
+    const { error } = await supabase
+      .from('houses')
+      .upsert({ user_id: user.id, is_private: val }, { onConflict: 'user_id' })
+
+    setSavingPrivacy(false)
+    if (error) {
+      setPrivacyMsg('Failed to update privacy settings.')
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      setLoading(false)
-      if (error) {
-        setMessage(error.message)
-      } else {
-        router.push('/')
-      }
+      setPrivacyMsg('Privacy settings updated successfully.')
+      setTimeout(() => setPrivacyMsg(null), 3000)
     }
   }
 
+  // Unblock Account
+  const handleUnblock = async (recordId: string) => {
+    const unblockTime = new Date().toISOString()
+    const { error } = await supabase
+      .from('blocked_users')
+      .update({ unblocked_at: unblockTime })
+      .eq('id', recordId)
+
+    if (!error) {
+      setBlockedList((prev) =>
+        prev.map((b) => (b.id === recordId ? { ...b, unblocked_at: unblockTime } : b))
+      )
+    }
+  }
+
+  // Re-block Account with 24h Cooldown Safety Check
+  const handleReblock = async (recordId: string, unblockedAt?: string | null) => {
+    setBlockError(null)
+    if (unblockedAt) {
+      const hoursSinceUnblock = (Date.now() - new Date(unblockedAt).getTime()) / (1000 * 60 * 60)
+      const COOLDOWN_HOURS = 24
+      if (hoursSinceUnblock < COOLDOWN_HOURS) {
+        const hoursLeft = Math.ceil(COOLDOWN_HOURS - hoursSinceUnblock)
+        setBlockError(`For safety, you must wait ${hoursLeft}h before re-blocking this account.`)
+        return
+      }
+    }
+
+    const { error } = await supabase
+      .from('blocked_users')
+      .update({ unblocked_at: null })
+      .eq('id', recordId)
+
+    if (!error) {
+      setBlockedList((prev) =>
+        prev.map((b) => (b.id === recordId ? { ...b, unblocked_at: null } : b))
+      )
+    }
+  }
+
+  // Strong Password Validation (Min 10 chars, uppercase, lowercase, number, symbol)
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPassMsg(null)
+
+    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{10,}$/
+
+    if (!strongPasswordRegex.test(newPassword)) {
+      setPassMsg({
+        text: 'Password must be at least 10 characters and include an uppercase letter, lowercase letter, number, and symbol.',
+        isError: true,
+      })
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPassMsg({ text: 'New passwords do not match.', isError: true })
+      return
+    }
+
+    setUpdatingPass(true)
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    setUpdatingPass(false)
+
+    if (error) {
+      setPassMsg({ text: error.message, isError: true })
+    } else {
+      setPassMsg({ text: 'Password updated successfully with strong authentication.', isError: false })
+      setNewPassword('')
+      setConfirmPassword('')
+    }
+  }
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+    router.refresh()
+  }
+
+  if (loading) return <div className="p-6 text-xs text-[#888]">Loading settings...</div>
+
   return (
-    <div className="min-h-screen bg-[#151815] flex flex-col justify-center px-6 py-12">
-      <div className="rounded-3xl bg-[#1E221E] border border-[#2E352E] p-6 space-y-6 shadow-2xl">
-        {/* Custom HomeWallr Emblem & Wordmark */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#222B22] border border-[#344234] text-[#8FA680] mx-auto">
-            <svg
-              className="w-8 h-8"
-              viewBox="0 0 36 36"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2.2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M5 16L18 6l13 10" />
-              <path d="M24 10.5V7h3v5.8" />
-              <path d="M8 14.5v13l4.5-3.2c1.7.7 3.6 1.1 5.5 1.1 6.1 0 11-4.1 11-9.2v-1.7" />
-              <path d="M15.2 24.3v-6.5h5.6v6.5" />
-            </svg>
+    <div className="px-5 pt-6 pb-20 space-y-6 bg-[#111111] min-h-screen max-w-xl mx-auto text-white font-sans">
+      <div className="space-y-1">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#888]">
+          Preferences & Account
+        </p>
+        <h1 className="text-xl font-bold text-white">Settings</h1>
+      </div>
+
+      <div className="space-y-5">
+        {/* 1. House & Content Shortcuts */}
+        <div className="rounded-2xl bg-[#181818] border border-[#262626] overflow-hidden shadow-sm divide-y divide-[#222]">
+          <div className="px-4 py-3 bg-[#1C1C1C]">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[#888]">House & Logbook</h2>
           </div>
 
-          <h1 className="text-2xl font-serif font-bold text-[#F2EFE9] tracking-tight">
-            HomeWallr
-          </h1>
-          <p className="text-xs text-[#9C9A92]">
-            Your private House Passport & renovation logbook
-          </p>
+          <Link href="/timeline" className="flex items-center justify-between px-4 py-3.5 hover:bg-[#1C1C1C] transition-colors">
+            <div>
+              <p className="text-xs font-bold text-white">View Build Logbook</p>
+              <p className="text-[11px] text-[#888]">Review timeline entries, stage progress, and spend</p>
+            </div>
+            <span className="text-[#888]">→</span>
+          </Link>
+
+          <Link href="/shop" className="flex items-center justify-between px-4 py-3.5 hover:bg-[#1C1C1C] transition-colors">
+            <div>
+              <p className="text-xs font-bold text-white">Edit House Specs & Paints</p>
+              <p className="text-[11px] text-[#888]">Manage saved paint codes, tiles, and supplier links</p>
+            </div>
+            <span className="text-[#888]">→</span>
+          </Link>
+
+          <Link href="/floorplan" className="flex items-center justify-between px-4 py-3.5 hover:bg-[#1C1C1C] transition-colors">
+            <div>
+              <p className="text-xs font-bold text-white">Architectural Floor Plan</p>
+              <p className="text-[11px] text-[#888]">View blueprints and room dimensions</p>
+            </div>
+            <span className="text-[#888]">→</span>
+          </Link>
         </div>
 
-        <form onSubmit={handleAuth} className="space-y-3.5">
-          <div>
-            <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">Email</label>
-            <input
-              type="email"
-              required
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl focus:outline-none focus:border-[#8FA680]"
-            />
+        {/* 2. Privacy & Social Settings */}
+        <div className="rounded-2xl bg-[#181818] border border-[#262626] p-4 space-y-3.5 shadow-sm">
+          <div className="flex items-center justify-between border-b border-[#222] pb-2.5">
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-[#888]">Privacy & Safety</h2>
+              <p className="text-xs font-medium text-white pt-0.5">Private House Profile</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleTogglePrivacy(!isPrivate)}
+              disabled={savingPrivacy}
+              className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${
+                isPrivate ? 'bg-cyan-500 justify-end' : 'bg-[#333] justify-start'
+              }`}
+            >
+              <div className="w-4 h-4 rounded-full bg-white shadow-md" />
+            </button>
           </div>
-
-          <div>
-            <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">Password</label>
-            <input
-              type="password"
-              required
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl focus:outline-none focus:border-[#8FA680]"
-            />
-          </div>
-
-          {message && (
-            <p className="text-xs text-[#C6A467] bg-[#26231B] border border-[#473E29] rounded-xl px-3 py-2">
-              {message}
+          <p className="text-[11px] text-[#888] leading-relaxed">
+            When your house profile is private, new visitors must send a follow request to view your room breakdown, photos, and pinned ideas.
+          </p>
+          {privacyMsg && (
+            <p className={`text-[11px] font-medium ${privacyMsg.includes('Failed') ? 'text-red-400' : 'text-cyan-400'}`}>
+              {privacyMsg}
             </p>
           )}
+        </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-xl bg-[#8FA680] hover:bg-[#9FB690] text-[#121612] text-xs font-semibold transition-colors"
-          >
-            {loading ? 'Please wait...' : isSignUp ? 'Create House Passport' : 'Sign In'}
-          </button>
-        </form>
+        {/* 3. Blocked Accounts Manager with 24h Cooldown */}
+        <div className="rounded-2xl bg-[#181818] border border-[#262626] p-4 space-y-3 shadow-sm">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#888]">Blocked Accounts</h2>
+          <p className="text-[11px] text-[#888] leading-relaxed">
+            Manage restricted accounts. To prevent harassment loops, unblocked accounts carry a 24-hour cooldown before they can be re-blocked.
+          </p>
 
-        <div className="text-center">
+          {blockError && <p className="text-[11px] text-red-400 font-medium">{blockError}</p>}
+
+          {blockedList.length === 0 ? (
+            <p className="text-xs text-[#666] italic pt-1">No blocked accounts.</p>
+          ) : (
+            <div className="space-y-2 pt-1">
+              {blockedList.map((item) => {
+                const isUnblocked = item.unblocked_at !== null
+                return (
+                  <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-[#111] border border-[#262626]">
+                    <div>
+                      <p className="text-xs font-bold text-white">User ID: {item.blocked_id.slice(0, 8)}...</p>
+                      <p className="text-[10px] text-[#777]">
+                        {isUnblocked ? 'Unblocked (cooldown active)' : 'Blocked'}
+                      </p>
+                    </div>
+
+                    {isUnblocked ? (
+                      <button
+                        type="button"
+                        onClick={() => handleReblock(item.id, item.unblocked_at)}
+                        className="px-3.5 py-1.5 rounded-lg bg-[#222] hover:bg-[#2A2A2A] text-xs font-semibold text-[#CCC] border border-[#333]"
+                      >
+                        Re-block
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleUnblock(item.id)}
+                        className="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold text-white"
+                      >
+                        Unblock
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* 4. Account Security (Strong Password) */}
+        <div className="rounded-2xl bg-[#181818] border border-[#262626] p-4 space-y-3.5 shadow-sm">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#888]">Account Security</h2>
+          <form onSubmit={handleChangePassword} className="space-y-3">
+            <div>
+              <label className="block text-[11px] font-medium text-[#AAA] mb-1">New Password</label>
+              <input
+                type="password"
+                required
+                placeholder="Min 10 chars, uppercase, lowercase, number & symbol"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl focus:outline-none focus:border-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-medium text-[#AAA] mb-1">Confirm New Password</label>
+              <input
+                type="password"
+                required
+                placeholder="Re-enter new password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl focus:outline-none focus:border-white"
+              />
+            </div>
+
+            {passMsg && (
+              <p className={`text-[11px] font-medium ${passMsg.isError ? 'text-red-400' : 'text-cyan-400'}`}>
+                {passMsg.text}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={updatingPass}
+              className="px-4 py-2 bg-white hover:bg-[#E0E0E0] text-black text-xs font-semibold rounded-xl transition-colors"
+            >
+              {updatingPass ? 'Updating...' : 'Update Password Securely'}
+            </button>
+          </form>
+        </div>
+
+        {/* 5. Sign Out */}
+        <div className="pt-2">
           <button
             type="button"
-            onClick={() => {
-              setIsSignUp(!isSignUp)
-              setMessage(null)
-            }}
-            className="text-xs text-[#9C9A92] hover:text-[#F2EFE9]"
+            onClick={handleSignOut}
+            className="w-full py-3 rounded-xl bg-[#222] hover:bg-red-950/40 text-red-400 text-xs font-semibold border border-[#333] transition-colors"
           >
-            {isSignUp ? 'Already have an account? Sign in' : 'New homeowner? Create a free account'}
+            Sign Out of HomeWallr
           </button>
         </div>
       </div>
@@ -137,27 +351,51 @@ export default function AppleIcon() {
         style={{
           width: '100%',
           height: '100%',
-          background: '#151815',
+          background: '#111111',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          borderRadius: '40px',
         }}
       >
-        <svg
-          width="112"
-          height="112"
-          viewBox="0 0 36 36"
-          fill="none"
-          stroke="#8FA680"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+        <div
+          style={{
+            width: '150px',
+            height: '150px',
+            borderRadius: '32px',
+            background: 'linear-gradient(to top right, #06b6d4, #a855f7, #ec4899)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '4px',
+          }}
         >
-          <path d="M5 16L18 6l13 10" />
-          <path d="M24 10.5V7h3v5.8" />
-          <path d="M8 14.5v13l4.5-3.2c1.7.7 3.6 1.1 5.5 1.1 6.1 0 11-4.1 11-9.2v-1.7" />
-          <path d="M15.2 24.3v-6.5h5.6v6.5" />
-        </svg>
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              background: '#181818',
+              borderRadius: '28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <svg
+              width="84"
+              height="84"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#FFFFFF"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 10L12 3l9 7v10a2 2 0 01-2 2H5a2 2 0 01-2-2V10z" />
+              <circle cx="12" cy="14" r="3" />
+            </svg>
+          </div>
+        </div>
       </div>
     ),
     { ...size }
@@ -176,27 +414,51 @@ export default function Icon() {
         style={{
           width: '100%',
           height: '100%',
-          background: '#151815',
+          background: '#111111',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          borderRadius: '110px',
         }}
       >
-        <svg
-          width="320"
-          height="320"
-          viewBox="0 0 36 36"
-          fill="none"
-          stroke="#8FA680"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+        <div
+          style={{
+            width: '420px',
+            height: '420px',
+            borderRadius: '90px',
+            background: 'linear-gradient(to top right, #06b6d4, #a855f7, #ec4899)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '8px',
+          }}
         >
-          <path d="M5 16L18 6l13 10" />
-          <path d="M24 10.5V7h3v5.8" />
-          <path d="M8 14.5v13l4.5-3.2c1.7.7 3.6 1.1 5.5 1.1 6.1 0 11-4.1 11-9.2v-1.7" />
-          <path d="M15.2 24.3v-6.5h5.6v6.5" />
-        </svg>
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              background: '#181818',
+              borderRadius: '82px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <svg
+              width="240"
+              height="240"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#FFFFFF"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 10L12 3l9 7v10a2 2 0 01-2 2H5a2 2 0 01-2-2V10z" />
+              <circle cx="12" cy="14" r="3" />
+            </svg>
+          </div>
+        </div>
       </div>
     ),
     { ...size }
@@ -2035,6 +2297,7 @@ export default function CommunityFeedPage() {
 import type { Metadata } from 'next'
 import './globals.css'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import BottomNav from '@/components/BottomNav'
 
 export const metadata: Metadata = {
@@ -2056,7 +2319,7 @@ export default function RootLayout({
           <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 animate-rgb opacity-80" />
 
           <Link href="/profile" className="flex items-center gap-2.5 group">
-            {/* New Camera-House Logo Badge */}
+            {/* Camera-House Logo Badge */}
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 via-purple-500 to-pink-500 p-0.5 shadow-md animate-rgb group-hover:scale-105 transition-transform flex items-center justify-center">
               <div className="w-full h-full bg-[#181818] rounded-[10px] flex items-center justify-center">
                 <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -2070,21 +2333,23 @@ export default function RootLayout({
             </span>
           </Link>
 
-          <div className="flex items-center gap-4 text-xs font-medium text-[#A3A3A3]">
-            <Link href="/profile" className="hover:text-white transition-colors">
-              Profile
-            </Link>
-            <Link href="/timeline" className="hover:text-white transition-colors">
-              Logbook
-            </Link>
-            <Link href="/shop" className="hover:text-white transition-colors">
-              Specs
-            </Link>
+          {/* Clean Right Actions: Post Button & Settings Cog */}
+          <div className="flex items-center gap-3">
             <Link
               href="/upload"
-              className="px-3.5 py-1.5 rounded-full bg-white text-black font-semibold hover:bg-[#E0E0E0] transition-colors shadow-xs"
+              className="px-3.5 py-1.5 rounded-full bg-white text-black font-semibold hover:bg-[#E0E0E0] transition-colors shadow-xs text-xs"
             >
               + Post
+            </Link>
+            <Link
+              href="/settings"
+              aria-label="Settings"
+              className="p-2 text-[#A3A3A3] hover:text-white hover:bg-[#262626] rounded-full transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
             </Link>
           </div>
         </header>
@@ -2094,8 +2359,10 @@ export default function RootLayout({
           {children}
         </main>
 
-        {/* Fixed Bottom Navigation Bar with Multi-Colored Icons */}
-        <BottomNav />
+        {/* Fixed Bottom Navigation Bar wrapped in Suspense to satisfy Next.js prerendering */}
+        <Suspense fallback={null}>
+          <BottomNav />
+        </Suspense>
       </body>
     </html>
   )
@@ -2671,313 +2938,10 @@ export default function RoomDetailPage() {
   )
 }
 ==> app/page.tsx <==
-'use client'
+import { redirect } from 'next/navigation'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
-import type { User } from '@supabase/supabase-js'
-
-interface Room {
-  id: string
-  name: string
-}
-
-export default function UploadMilestonePage() {
-  const router = useRouter()
-  const [user, setUser] = useState<User | null>(null)
-  const [rooms, setRooms] = useState<Room[]>([])
-  const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
-
-  const [postMode, setPostMode] = useState<'grid' | 'story'>('grid')
-  const [roomId, setRoomId] = useState('')
-  const [stage, setStage] = useState('Painting & Decorating')
-  const [caption, setCaption] = useState('')
-  
-  // Collapsible optional details toggle
-  const [showExtra, setShowExtra] = useState(false)
-  const [specsInput, setSpecsInput] = useState('')
-  const [cost, setCost] = useState('')
-  const [contractor, setContractor] = useState('')
-
-  const [file, setFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-
-  useEffect(() => {
-    const init = async () => {
-      const { data: auth } = await supabase.auth.getUser()
-      if (!auth.user) return router.push('/login')
-      setUser(auth.user)
-
-      const { data: roomData } = await supabase
-        .from('rooms')
-        .select('id, name')
-        .order('created_at', { ascending: true })
-      if (roomData) {
-        setRooms(roomData)
-        if (roomData.length > 0) setRoomId(roomData[0].id)
-      }
-      setLoading(false)
-    }
-    init()
-  }, [router])
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const chosen = e.target.files?.[0] || null
-    setFile(chosen)
-    if (chosen) {
-      setPreviewUrl(URL.createObjectURL(chosen))
-    } else {
-      setPreviewUrl(null)
-    }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!user) return
-    setSubmitting(true)
-
-    let uploadedUrl: string | null = null
-    let mediaType: 'image' | 'video' | null = null
-
-    if (file) {
-      const isVideo = file.type.startsWith('video/')
-      mediaType = isVideo ? 'video' : 'image'
-      const ext = file.name.split('.').pop() || (isVideo ? 'mp4' : 'jpg')
-      const filePath = `${user.id}/${Date.now()}.${ext}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('post-images')
-        .upload(filePath, file)
-
-      if (uploadError) {
-        setSubmitting(false)
-        alert('Upload failed: ' + uploadError.message)
-        return
-      }
-
-      const { data: pubData } = supabase.storage.from('post-images').getPublicUrl(filePath)
-      uploadedUrl = pubData.publicUrl
-    }
-
-    const parsedSpecs = specsInput
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-
-    const isStory = postMode === 'story'
-    const expiresAt = isStory ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() : null
-
-    const { error } = await supabase.from('posts').insert([
-      {
-        user_id: user.id,
-        room_id: roomId || null,
-        stage,
-        caption: caption.trim() || null,
-        image_url: uploadedUrl,
-        media_type: mediaType,
-        is_story: isStory,
-        expires_at: expiresAt,
-        specs: parsedSpecs,
-        cost: cost ? Number(cost) : null,
-        contractor: contractor.trim() || null,
-      },
-    ])
-
-    setSubmitting(false)
-    if (error) {
-      alert('Could not save entry: ' + error.message)
-      return
-    }
-
-    router.push(isStory ? '/profile' : '/')
-  }
-
-  if (loading) return <div className="p-6 text-xs text-[#9C9A92]">Loading...</div>
-
-  return (
-    <div className="px-5 pt-4 pb-12 space-y-4 bg-[#151815] min-h-screen">
-      <div>
-        <p className="text-[10px] uppercase tracking-widest font-semibold text-[#C6A467]">
-          Document Progress
-        </p>
-        <h1 className="text-lg font-semibold text-[#F2EFE9]">Log Renovation Milestone</h1>
-      </div>
-
-      {/* Mode Switcher */}
-      <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-[#1E221E] border border-[#2E332E]">
-        <button
-          type="button"
-          onClick={() => setPostMode('grid')}
-          className={`py-2 text-xs font-semibold rounded-lg transition-colors ${
-            postMode === 'grid'
-              ? 'bg-[#8FA680] text-[#121612]'
-              : 'text-[#9C9A92] hover:text-[#F2EFE9]'
-          }`}
-        >
-          Logbook & Grid Post
-        </button>
-        <button
-          type="button"
-          onClick={() => setPostMode('story')}
-          className={`py-2 text-xs font-semibold rounded-lg transition-colors ${
-            postMode === 'story'
-              ? 'bg-[#C6A467] text-[#121612]'
-              : 'text-[#9C9A92] hover:text-[#F2EFE9]'
-          }`}
-        >
-          24h Quick Story
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-3.5">
-        {/* Photo / Video Upload Box */}
-        <label className="block cursor-pointer rounded-2xl bg-[#1E221E] border border-dashed border-[#495B42] hover:border-[#8FA680] p-4 text-center space-y-2 transition-colors">
-          {previewUrl ? (
-            file?.type.startsWith('video/') ? (
-              <video src={previewUrl} controls className="w-full max-h-64 rounded-xl mx-auto" />
-            ) : (
-              <img src={previewUrl} alt="Preview" className="w-full max-h-64 object-cover rounded-xl mx-auto" />
-            )
-          ) : (
-            <div className="py-6 space-y-1">
-              <p className="text-xs font-semibold text-[#8FA680]">+ Tap to Add Photo or Video</p>
-              <p className="text-[11px] text-[#9C9A92]">
-                Before & after shots, plastering progress, paint swatches, or receipts
-              </p>
-            </div>
-          )}
-          <input
-            type="file"
-            accept="image/*,video/*"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-        </label>
-
-        {/* Room & Stage */}
-        <div className="grid grid-cols-2 gap-2.5">
-          <div>
-            <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">Room / Space</label>
-            <select
-              value={roomId}
-              onChange={(e) => setRoomId(e.target.value)}
-              className="w-full px-3 py-2.5 text-xs bg-[#1E221E] text-[#F2EFE9] border border-[#2E332E] rounded-xl focus:outline-none focus:border-[#8FA680]"
-            >
-              <option value="">Whole House</option>
-              {rooms.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">Renovation Stage</label>
-            <select
-              value={stage}
-              onChange={(e) => setStage(e.target.value)}
-              className="w-full px-3 py-2.5 text-xs bg-[#1E221E] text-[#F2EFE9] border border-[#2E332E] rounded-xl focus:outline-none focus:border-[#8FA680]"
-            >
-              <option value="Planning & Design">Planning & Design</option>
-              <option value="Stripping Out">Stripping Out</option>
-              <option value="First Fix & Structural">First Fix & Structural</option>
-              <option value="Plastering & Prep">Plastering & Prep</option>
-              <option value="Second Fix & Flooring">Second Fix & Flooring</option>
-              <option value="Painting & Decorating">Painting & Decorating</option>
-              <option value="Furnishing & Styling">Furnishing & Styling</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Caption */}
-        <div>
-          <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">Notes / Caption</label>
-          <textarea
-            rows={3}
-            placeholder="What was completed today? Any lessons learned or supplier notes..."
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            className="w-full px-3.5 py-2.5 text-xs bg-[#1E221E] text-[#F2EFE9] placeholder-[#6B6962] border border-[#2E332E] rounded-xl resize-none focus:outline-none focus:border-[#8FA680]"
-          />
-        </div>
-
-        {/* Collapsible Optional Details Toggle */}
-        {postMode === 'grid' && (
-          <div className="space-y-3 pt-1">
-            <button
-              type="button"
-              onClick={() => setShowExtra(!showExtra)}
-              className="text-xs font-semibold text-[#8FA680] hover:underline flex items-center gap-1.5"
-            >
-              <span>{showExtra ? '▾ Hide Additional Specs, Cost & Contractor' : '▸ Add Materials, Cost & Contractor (Optional)'}</span>
-            </button>
-
-            {showExtra && (
-              <div className="space-y-3 p-3.5 rounded-2xl bg-[#1E221E] border border-[#2E332E]">
-                <div>
-                  <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">
-                    Materials, Paints & Specs (comma-separated)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g., Farrow & Ball Ammonite, Oak Herringbone"
-                    value={specsInput}
-                    onChange={(e) => setSpecsInput(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl focus:outline-none focus:border-[#8FA680]"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div>
-                    <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">
-                      Cost (£ optional)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="e.g., 240"
-                      value={cost}
-                      onChange={(e) => setCost(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl focus:outline-none focus:border-[#8FA680]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">
-                      Done By (optional)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g., DIY, Electrician"
-                      value={contractor}
-                      onChange={(e) => setContractor(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl focus:outline-none focus:border-[#8FA680]"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full py-3 rounded-xl bg-[#8FA680] hover:bg-[#9FB690] text-[#121612] text-xs font-semibold shadow-sm transition-colors"
-        >
-          {submitting
-            ? 'Saving...'
-            : postMode === 'story'
-            ? 'Post 24h Story'
-            : 'Save to House Passport'}
-        </button>
-      </form>
-    </div>
-  )
+export default function RootPage() {
+  redirect('/feed')
 }
 ==> app/timeline/page.tsx <==
 'use client'
@@ -3581,15 +3545,50 @@ import { supabase } from '@/lib/supabase'
 export default function LoginPage() {
   const router = useRouter()
   const [isSignUp, setIsSignUp] = useState(false)
+  const [isResetMode, setIsResetMode] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null)
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    setErrorMsg(null)
+    setMessage(null)
+
+    // Handle Password Reset Request
+    if (isResetMode) {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/settings`,
+      })
+      setLoading(false)
+      if (error) {
+        setMessage({ text: error.message, isError: true })
+      } else {
+        setMessage({ text: 'Password reset link sent to your email! Check your inbox.', isError: false })
+      }
+      return
+    }
+
+    // Enforce strong password requirements and confirmation matching on Sign Up
+    if (isSignUp) {
+      const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{10,}$/
+      if (!strongPasswordRegex.test(password)) {
+        setLoading(false)
+        setMessage({
+          text: 'Password must be at least 10 characters and include an uppercase letter, lowercase letter, number, and symbol.',
+          isError: true,
+        })
+        return
+      }
+
+      if (password !== confirmPassword) {
+        setLoading(false)
+        setMessage({ text: 'Passwords do not match. Please re-enter.', isError: true })
+        return
+      }
+    }
 
     const { error } = isSignUp
       ? await supabase.auth.signUp({ email, password })
@@ -3598,74 +3597,122 @@ export default function LoginPage() {
     setLoading(false)
 
     if (error) {
-      setErrorMsg(error.message)
+      setMessage({ text: error.message, isError: true })
     } else {
-      router.push('/upload')
+      if (isSignUp) {
+        router.push('/onboarding')
+      } else {
+        router.push('/feed')
+      }
       router.refresh()
     }
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-md mx-auto">
-      <div className="space-y-1">
-        <p className="text-xs tracking-wider text-stone-400 uppercase font-medium">Account Access</p>
-        <h1 className="text-xl font-medium text-stone-900">
-          {isSignUp ? 'Create your Passport' : 'Sign in to homewallr'}
-        </h1>
-      </div>
-
-      {errorMsg && (
-        <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-xs text-red-600">
-          {errorMsg}
-        </div>
-      )}
-
-      <form onSubmit={handleAuth} className="space-y-4">
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-stone-700">Email</label>
-          <input
-            type="email"
-            required
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-stone-400"
-          />
+    <div className="min-h-screen bg-[#111111] flex flex-col justify-center px-6 py-12 max-w-md mx-auto text-white font-sans">
+      <div className="rounded-3xl bg-[#181818] border border-[#262626] p-6 space-y-6 shadow-2xl">
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl font-bold tracking-tight text-white">HomeWallr</h1>
+          <p className="text-xs text-[#888]">
+            {isResetMode
+              ? 'Reset your account password'
+              : 'Your private House Passport & renovation logbook'}
+          </p>
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-stone-700">Password</label>
-          <input
-            type="password"
-            required
-            minLength={6}
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-stone-400"
-          />
+        <form onSubmit={handleAuth} className="space-y-3.5">
+          <div>
+            <label className="block text-[11px] font-medium text-[#AAA] mb-1">Email</label>
+            <input
+              type="email"
+              required
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl focus:outline-none focus:border-white"
+            />
+          </div>
+
+          {!isResetMode && (
+            <div>
+              <label className="block text-[11px] font-medium text-[#AAA] mb-1">Password</label>
+              <input
+                type="password"
+                required
+                placeholder={isSignUp ? 'Min 10 chars, upper, lower, num & symbol' : '••••••••'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl focus:outline-none focus:border-white"
+              />
+            </div>
+          )}
+
+          {isSignUp && (
+            <div>
+              <label className="block text-[11px] font-medium text-[#AAA] mb-1">Confirm Password</label>
+              <input
+                type="password"
+                required
+                placeholder="Re-enter your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl focus:outline-none focus:border-white"
+              />
+            </div>
+          )}
+
+          {message && (
+            <p
+              className={`text-xs px-3 py-2 rounded-xl border ${
+                message.isError
+                  ? 'text-red-400 bg-red-950/30 border-red-900/50'
+                  : 'text-cyan-400 bg-cyan-950/30 border-cyan-900/50'
+              }`}
+            >
+              {message.text}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 rounded-xl bg-white hover:bg-[#E0E0E0] text-black text-xs font-semibold transition-colors"
+          >
+            {loading
+              ? 'Please wait...'
+              : isResetMode
+              ? 'Send Reset Instructions'
+              : isSignUp
+              ? 'Create House Passport'
+              : 'Sign In'}
+          </button>
+        </form>
+
+        <div className="flex items-center justify-between text-xs text-[#888] pt-1">
+          <button
+            type="button"
+            onClick={() => {
+              setIsResetMode(!isResetMode)
+              setMessage(null)
+            }}
+            className="hover:text-white underline"
+          >
+            {isResetMode ? 'Back to sign in' : 'Forgot password?'}
+          </button>
+
+          {!isResetMode && (
+            <button
+              type="button"
+              onClick={() => {
+                setIsSignUp(!isSignUp)
+                setMessage(null)
+              }}
+              className="hover:text-white underline"
+            >
+              {isSignUp ? 'Have an account? Sign in' : 'Create an account'}
+            </button>
+          )}
         </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-2.5 bg-stone-900 text-white text-sm font-medium rounded-xl hover:bg-stone-800 transition-colors disabled:opacity-50"
-        >
-          {loading ? 'Please wait...' : isSignUp ? 'Create Account' : 'Sign In'}
-        </button>
-      </form>
-
-      <div className="text-center pt-2">
-        <button
-          type="button"
-          onClick={() => {
-            setIsSignUp(!isSignUp)
-            setErrorMsg(null)
-          }}
-          className="text-xs text-stone-500 hover:text-stone-900 underline"
-        >
-          {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
-        </button>
       </div>
     </div>
   )
@@ -5066,7 +5113,7 @@ export default function BottomNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#181818]/95 backdrop-blur-md border-t border-[#262626] px-6 py-3 flex items-center justify-between max-w-lg mx-auto sm:rounded-t-2xl shadow-lg">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#181818]/95 backdrop-blur-md border-t border-[#262626] px-6 py-3 flex items-center justify-between w-full shadow-lg">
       
       {/* 1. Feed / Home */}
       <Link href="/feed" className="flex flex-col items-center gap-1.5 group">
@@ -5105,6 +5152,79 @@ export default function BottomNav() {
         <span className="text-xs font-medium text-[#EDEDED]">Profile</span>
       </Link>
     </nav>
+  )
+}
+==> components/UserProfileActions.tsx <==
+'use client'
+
+import { useState } from 'react'
+import { supabase } from '@/lib/supabase'
+
+interface UserProfileActionsProps {
+  targetUserId: string
+  targetUserHandle: string
+}
+
+export default function UserProfileActions({ targetUserId, targetUserHandle }: UserProfileActionsProps) {
+  const [showMenu, setShowMenu] = useState(false)
+  const [blocking, setBlocking] = useState(false)
+  const [blocked, setBlocked] = useState(false)
+
+  const handleBlockUser = async () => {
+    if (!confirm(`Are you sure you want to block @${targetUserHandle}? They will no longer be able to see your house passport or interact with your posts.`)) {
+      return
+    }
+
+    setBlocking(true)
+    const { data: auth } = await supabase.auth.getUser()
+    if (!auth.user) return
+
+    // Insert into a 'blocked_users' table in Supabase
+    const { error } = await supabase.from('blocked_users').insert([
+      { blocker_id: auth.user.id, blocked_id: targetUserId }
+    ])
+
+    setBlocking(false)
+    if (error) {
+      alert('Error blocking user: ' + error.message)
+    } else {
+      setBlocked(true)
+      setShowMenu(false)
+    }
+  }
+
+  if (blocked) {
+    return (
+      <span className="text-xs text-red-400 font-medium px-3 py-1.5 rounded-full bg-red-950/30 border border-red-900/50">
+        Blocked
+      </span>
+    )
+  }
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setShowMenu(!showMenu)}
+        className="p-2 rounded-full bg-[#1C1C1C] hover:bg-[#262626] border border-[#2A2A2A] text-white text-xs"
+        title="More options"
+      >
+        •••
+      </button>
+
+      {showMenu && (
+        <div className="absolute right-0 mt-2 w-48 rounded-xl bg-[#181818] border border-[#262626] shadow-xl py-1 z-50">
+          <button
+            type="button"
+            onClick={handleBlockUser}
+            disabled={blocking}
+            className="w-full text-left px-4 py-2.5 text-xs text-red-400 hover:bg-[#222] font-semibold flex items-center gap-2"
+          >
+            <span>🚫</span> {blocking ? 'Blocking...' : `Block @${targetUserHandle}`}
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
 ==> components/FloorPlanContext.tsx <==
