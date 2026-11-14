@@ -5,5 +5,16 @@ body {
   width: 100%;
   margin: 0;
   padding: 0;
-  background-color: #F4F2ED;
+  background-color: #111111;
+  color: #EDEDED;
+}
+
+@keyframes rgbGlow {
+  0% { filter: hue-rotate(0deg); }
+  50% { filter: hue-rotate(180deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+.animate-rgb {
+  animation: rgbGlow 6s linear infinite;
 }

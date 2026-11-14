@@ -300,7 +300,7 @@ export default function SpecsDirectoryPage() {
     await supabase.from('houses').upsert({ user_id: user.id, pinned_products: updated }, { onConflict: 'user_id' })
   }
 
-  if (loading) return <div className="p-6 text-xs text-[#9C9A92]">Loading house specs...</div>
+  if (loading) return <div className="p-6 text-xs text-[#888]">Loading house specs...</div>
 
   const q = search.toLowerCase().trim()
   const filteredPinned = pinnedProducts.filter(
@@ -315,20 +315,20 @@ export default function SpecsDirectoryPage() {
   )
 
   return (
-    <div className="px-5 pt-4 pb-12 space-y-5 bg-[#151815] min-h-screen">
+    <div className="px-5 pt-6 pb-16 space-y-5 bg-[#111111] min-h-screen max-w-2xl mx-auto">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-[10px] uppercase tracking-widest font-semibold text-[#C6A467]">
+          <p className="text-[10px] uppercase tracking-widest font-semibold text-[#888]">
             House Passport Directory
           </p>
-          <h1 className="text-lg font-semibold text-[#F2EFE9]">Specs, Paints & Materials</h1>
-          <p className="text-xs text-[#9C9A92]">Every paint shade, tile, and fixture in your home</p>
+          <h1 className="text-lg font-semibold text-white">Specs, Paints & Materials</h1>
+          <p className="text-xs text-[#888]">Every paint shade, tile, and fixture in your home</p>
         </div>
 
         <button
           type="button"
           onClick={() => setShowAdd(true)}
-          className="px-3.5 py-2 rounded-full bg-[#8FA680] hover:bg-[#9FB690] text-[#121612] text-xs font-semibold"
+          className="px-4 py-2 rounded-full bg-white hover:bg-[#E0E0E0] text-black text-xs font-semibold shadow-sm transition-colors"
         >
           + Add Spec
         </button>
@@ -339,42 +339,42 @@ export default function SpecsDirectoryPage() {
         placeholder="Search paint shades, brands, rooms..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="w-full px-3.5 py-2.5 text-xs bg-[#1E221E] text-[#F2EFE9] placeholder-[#6B6962] border border-[#2E332E] rounded-xl focus:outline-none focus:border-[#8FA680]"
+        className="w-full px-4 py-3 text-xs bg-[#181818] text-white placeholder-[#666] border border-[#262626] rounded-xl focus:outline-none focus:border-white"
       />
 
       {/* Saved / Pinned Product Specs */}
-      <div className="space-y-2.5">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9C9A92]">
+      <div className="space-y-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-[#888]">
           Saved House Specs ({filteredPinned.length})
         </h2>
 
         {filteredPinned.length === 0 ? (
-          <div className="rounded-2xl bg-[#1E221E] border border-[#2E332E] p-6 text-center space-y-1.5">
-            <p className="text-xs font-medium text-[#F2EFE9]">No saved specs yet</p>
-            <p className="text-[11px] text-[#9C9A92]">
+          <div className="rounded-2xl bg-[#181818] border border-[#262626] p-6 text-center space-y-1.5">
+            <p className="text-xs font-medium text-white">No saved specs yet</p>
+            <p className="text-[11px] text-[#888]">
               Save paint colours, flooring finishes, and supplier links so you never forget a shade or code.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-3">
             {filteredPinned.map((item) => (
               <div
                 key={item.id}
-                className="rounded-2xl bg-[#1E221E] border border-[#2E332E] p-3.5 space-y-1.5 relative flex flex-col justify-between"
+                className="rounded-2xl bg-[#181818] border border-[#262626] p-4 space-y-2 relative flex flex-col justify-between shadow-sm"
               >
                 <button
                   type="button"
                   onClick={() => handleRemove(item.id)}
-                  className="absolute top-2 right-2.5 text-sm text-[#7D7B73] hover:text-red-400"
+                  className="absolute top-2.5 right-3 text-sm text-[#777] hover:text-red-400"
                 >
                   ×
                 </button>
                 <div className="space-y-1">
-                  <span className="inline-block text-[9px] px-2 py-0.5 rounded bg-[#253025] text-[#8FA680] font-semibold">
+                  <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-[#222] text-[#CCC] font-semibold">
                     {item.brand}
                   </span>
-                  <h3 className="text-xs font-semibold text-[#F2EFE9] leading-snug">{item.name}</h3>
-                  <p className="text-[10px] text-[#9C9A92]">
+                  <h3 className="text-xs font-semibold text-white leading-snug">{item.name}</h3>
+                  <p className="text-[10px] text-[#888]">
                     {item.room || 'Whole House'}
                     {item.price ? ` · ${item.price}` : ''}
                   </p>
@@ -385,7 +385,7 @@ export default function SpecsDirectoryPage() {
                     href={item.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-block text-[11px] font-medium text-[#C6A467] underline pt-1"
+                    className="inline-block text-[11px] font-medium text-white underline pt-1"
                   >
                     Product Link →
                   </a>
@@ -398,18 +398,18 @@ export default function SpecsDirectoryPage() {
 
       {/* Auto-Extracted Specs from Logbook Posts */}
       {filteredTagged.length > 0 && (
-        <div className="space-y-2.5">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9C9A92]">
+        <div className="space-y-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#888]">
             Tagged in Logbook Posts ({filteredTagged.length})
           </h2>
           <div className="flex flex-wrap gap-2">
             {filteredTagged.map((item, idx) => (
               <div
                 key={idx}
-                className="px-3 py-1.5 rounded-xl bg-[#1E221E] border border-[#2E332E] text-xs flex items-center gap-2"
+                className="px-3.5 py-2 rounded-xl bg-[#181818] border border-[#262626] text-xs flex items-center gap-2"
               >
-                <span className="text-[#F2EFE9] font-medium">{item.spec}</span>
-                <span className="text-[10px] text-[#8FA680]">{item.roomName}</span>
+                <span className="text-white font-medium">{item.spec}</span>
+                <span className="text-[10px] text-[#888]">{item.roomName}</span>
               </div>
             ))}
           </div>
@@ -419,43 +419,43 @@ export default function SpecsDirectoryPage() {
       {/* Add Spec Modal */}
       {showAdd && (
         <div
-          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
           onClick={() => setShowAdd(false)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl bg-[#1E221E] border border-[#343B34] p-5 space-y-3 shadow-2xl"
+            className="w-full max-w-sm rounded-2xl bg-[#181818] border border-[#333] p-5 space-y-3.5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-[#F2EFE9]">Add House Spec</h2>
-              <button type="button" onClick={() => setShowAdd(false)} className="text-[#9C9A92] text-lg">
+              <h2 className="text-base font-semibold text-white">Add House Spec</h2>
+              <button type="button" onClick={() => setShowAdd(false)} className="text-[#888] text-lg">
                 ×
               </button>
             </div>
 
-            <form onSubmit={handleAddSpec} className="space-y-2.5">
+            <form onSubmit={handleAddSpec} className="space-y-3">
               <input
                 type="text"
                 required
-                placeholder="Item / Paint Name (e.g., Charleston Gray No. 243)"
+                placeholder="Item / Paint Name (e.g., Charleston Gray)"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl"
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
               />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 <input
                   type="text"
                   placeholder="Brand (e.g., Farrow & Ball)"
                   value={form.brand}
                   onChange={(e) => setForm({ ...form, brand: e.target.value })}
-                  className="px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl"
+                  className="px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
                 />
                 <input
                   type="text"
                   placeholder="Price (e.g., £59)"
                   value={form.price}
                   onChange={(e) => setForm({ ...form, price: e.target.value })}
-                  className="px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl"
+                  className="px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
                 />
               </div>
               <input
@@ -463,24 +463,273 @@ export default function SpecsDirectoryPage() {
                 placeholder="Room (e.g., Hallway, Snug)"
                 value={form.room}
                 onChange={(e) => setForm({ ...form, room: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl"
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
               />
               <input
                 type="url"
                 placeholder="Supplier URL (optional https://...)"
                 value={form.url}
                 onChange={(e) => setForm({ ...form, url: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl"
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
               />
               <button
                 type="submit"
                 disabled={saving}
-                className="w-full py-2.5 bg-[#8FA680] text-[#121612] text-xs font-semibold rounded-xl"
+                className="w-full py-3 bg-white text-black text-xs font-semibold rounded-xl hover:bg-[#E0E0E0]"
               >
                 {saving ? 'Saving...' : 'Save Spec'}
               </button>
             </form>
           </div>
+        </div>
+      )}
+    </div>
+  )
+}
+==> app/explore/page.tsx <==
+'use client'
+
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+import type { User } from '@supabase/supabase-js'
+
+interface HouseProfile {
+  user_id: string
+  owner_names: string | null
+  title: string | null
+  era: string | null
+  location: string | null
+  bio: string | null
+  avatar_url: string | null
+}
+
+interface PostResult {
+  id: string
+  user_id: string
+  stage: string | null
+  caption: string | null
+  image_url: string | null
+  specs: string[] | null
+  cost: number | null
+  created_at: string
+}
+
+export default function ExplorePage() {
+  const [user, setUser] = useState<User | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeFilter, setActiveFilter] = useState<'all' | 'houses' | 'posts'>('all')
+  const [houses, setHouses] = useState<HouseProfile[]>([])
+  const [posts, setPosts] = useState<PostResult[]>([])
+  const [loading, setLoading] = useState(false)
+
+  const popularTags = [
+    'Farrow & Ball',
+    'Herringbone',
+    'Panelling',
+    'Dining Room',
+    'Kitchen',
+    'Utility',
+  ]
+
+  useEffect(() => {
+    const init = async () => {
+      const { data: auth } = await supabase.auth.getUser()
+      if (auth.user) setUser(auth.user)
+    }
+    init()
+  }, [])
+
+  const handleSearch = async (term: string) => {
+    setSearchQuery(term)
+    const q = term.toLowerCase().trim()
+    if (!q) {
+      setHouses([])
+      setPosts([])
+      return
+    }
+
+    setLoading(true)
+
+    // 1. Search Houses across titles, eras, locations, bios, and owner names
+    const { data: houseData } = await supabase
+      .from('houses')
+      .select('*')
+      .or(`title.ilike.%${q}%,era.ilike.%${q}%,location.ilike.%${q}%,owner_names.ilike.%${q}%,bio.ilike.%${q}%`)
+
+    // 2. Search Rooms by name (e.g., "Dining Room", "Kitchen")
+    const { data: roomMatches } = await supabase
+      .from('rooms')
+      .select('user_id')
+      .ilike('name', `%${q}%`)
+
+    const roomUserIds = Array.from(new Set((roomMatches || []).map((r) => r.user_id)))
+    let roomHouses: HouseProfile[] = []
+    if (roomUserIds.length > 0) {
+      const { data: hData } = await supabase
+        .from('houses')
+        .select('*')
+        .in('user_id', roomUserIds)
+      if (hData) roomHouses = hData
+    }
+
+    // Combine and deduplicate houses
+    const combinedHouses = new Map<string, HouseProfile>()
+    ;[...(houseData || []), ...roomHouses].forEach((h) => {
+      combinedHouses.set(h.user_id, h)
+    })
+    setHouses(Array.from(combinedHouses.values()))
+
+    // 3. Search Posts across captions, stages, costs, and tagged specs/products
+    const { data: postData } = await supabase
+      .from('posts')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    const filteredPosts = (postData || []).filter((p) => {
+      const matchCaption = p.caption?.toLowerCase().includes(q)
+      const matchStage = p.stage?.toLowerCase().includes(q)
+      const matchCost = p.cost?.toString().includes(q)
+      const matchSpecs = Array.isArray(p.specs) && p.specs.some((s: string) => s.toLowerCase().includes(q))
+      return matchCaption || matchStage || matchCost || matchSpecs
+    })
+
+    setPosts(filteredPosts)
+    setLoading(false)
+  }
+
+  return (
+    <div className="px-5 pt-6 pb-20 space-y-5 bg-[#111111] min-h-screen max-w-xl mx-auto font-sans">
+      <div className="space-y-1">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#888]">
+          Discovery & Search
+        </p>
+        <h1 className="text-lg font-bold text-white">Explore HomeWallr</h1>
+      </div>
+
+      {/* Clean Straightforward Search Bar */}
+      <div className="relative">
+        <input
+          type="text"
+          placeholder="Search rooms, paint brands, products, or usernames..."
+          value={searchQuery}
+          onChange={(e) => handleSearch(e.target.value)}
+          className="w-full px-4 py-3.5 pl-10 text-xs bg-[#181818] text-white placeholder-[#666] border border-[#262626] rounded-2xl focus:outline-none focus:border-white shadow-inner"
+        />
+        <span className="absolute left-3.5 top-3.5 text-sm text-[#888]">🔍</span>
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={() => handleSearch('')}
+            className="absolute right-3.5 top-3.5 text-xs text-[#888] hover:text-white"
+          >
+            Clear ×
+          </button>
+        )}
+      </div>
+
+      {/* Quick Filter Tags */}
+      <div className="space-y-2">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-[#777]">Quick Tags</p>
+        <div className="flex flex-wrap gap-2">
+          {popularTags.map((tag, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => handleSearch(tag)}
+              className="px-3 py-1.5 rounded-full bg-[#1C1C1C] hover:bg-[#262626] border border-[#2A2A2A] text-xs text-[#CCC] font-medium transition-colors"
+            >
+              #{tag}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Results Filter Tabs */}
+      <div className="flex gap-2 border-b border-[#222] pb-3">
+        <button
+          type="button"
+          onClick={() => setActiveFilter('all')}
+          className={`px-3 py-1 rounded-full text-xs font-semibold ${activeFilter === 'all' ? 'bg-white text-black' : 'text-[#888]'}`}
+        >
+          All Results
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveFilter('houses')}
+          className={`px-3 py-1 rounded-full text-xs font-semibold ${activeFilter === 'houses' ? 'bg-white text-black' : 'text-[#888]'}`}
+        >
+          Houses ({houses.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveFilter('posts')}
+          className={`px-3 py-1 rounded-full text-xs font-semibold ${activeFilter === 'posts' ? 'bg-white text-black' : 'text-[#888]'}`}
+        >
+          Posts & Specs ({posts.length})
+        </button>
+      </div>
+
+      {/* Content Feed */}
+      {loading ? (
+        <p className="text-xs text-[#888] text-center py-8">Searching community accounts...</p>
+      ) : searchQuery && houses.length === 0 && posts.length === 0 ? (
+        <div className="p-8 rounded-2xl bg-[#181818] border border-[#262626] text-center space-y-1">
+          <p className="text-xs font-bold text-white">No matching results found for &quot;{searchQuery}&quot;</p>
+          <p className="text-[11px] text-[#888]">Try searching for room names, paint brands, or tags.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {(activeFilter === 'all' || activeFilter === 'houses') && houses.length > 0 && (
+            <div className="space-y-2.5">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-[#888]">Matching Houses</h2>
+              <div className="space-y-2">
+                {houses.map((house) => (
+                  <div key={house.user_id} className="p-4 rounded-2xl bg-[#181818] border border-[#262626] flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xs font-bold text-white">{house.title || 'House Passport'}</h3>
+                      <p className="text-[11px] text-[#888]">{house.era} · {house.location || 'UK'}</p>
+                      {house.bio && <p className="text-[11px] text-[#AAA] pt-1 line-clamp-1">{house.bio}</p>}
+                    </div>
+                    <Link href={`/profile`} className="px-3.5 py-1.5 rounded-full bg-white text-black text-xs font-semibold">
+                      View Passport →
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(activeFilter === 'all' || activeFilter === 'posts') && posts.length > 0 && (
+            <div className="space-y-2.5">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-[#888]">Matching Posts & Specs</h2>
+              <div className="grid grid-cols-2 gap-3">
+                {posts.map((post) => (
+                  <div key={post.id} className="rounded-2xl bg-[#181818] border border-[#262626] overflow-hidden space-y-2 pb-3">
+                    {post.image_url && (
+                      <img src={post.image_url} alt="" className="w-full h-32 object-cover" />
+                    )}
+                    <div className="px-3 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-[#888] uppercase">{post.stage || 'Update'}</span>
+                        {post.cost && <span className="text-[10px] font-bold text-white">£{Number(post.cost).toLocaleString()}</span>}
+                      </div>
+                      <p className="text-xs text-white line-clamp-2">{post.caption}</p>
+                      {post.specs && post.specs.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          {post.specs.map((s, idx) => (
+                            <span key={idx} className="text-[10px] px-2 py-0.5 rounded bg-[#222] text-cyan-400 font-semibold">
+                              🏷 {s}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -557,6 +806,10 @@ export default function VisualProfilePage() {
   const [houseTitle, setHouseTitle] = useState('The 1930s Semi')
   const [houseEra, setHouseEra] = useState('1930s Semi-Detached')
 
+  // Social Stats
+  const [followersCount, setFollowersCount] = useState(0)
+  const [followingCount, setFollowingCount] = useState(0)
+
   // Data collections
   const [rooms, setRooms] = useState<RoomCollection[]>([])
   const [gridPosts, setGridPosts] = useState<GridPost[]>([])
@@ -608,6 +861,20 @@ export default function VisualProfilePage() {
       }
 
       await fetchRooms()
+
+      // Fetch Followers and Following counts from follows table
+      const { count: followersC } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', auth.user.id)
+
+      const { count: followingC } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('follower_id', auth.user.id)
+
+      setFollowersCount(followersC || 0)
+      setFollowingCount(followingC || 0)
 
       const { data: postsData } = await supabase
         .from('posts')
@@ -718,7 +985,7 @@ export default function VisualProfilePage() {
     await supabase.from('houses').upsert({ user_id: user.id, pinned_products: updated }, { onConflict: 'user_id' })
   }
 
-  if (loading) return <div className="p-6 text-xs text-[#9C9A92]">Loading profile...</div>
+  if (loading) return <div className="p-6 text-xs text-[#888]">Loading profile...</div>
 
   const handle = user?.email?.split('@')[0] || 'homeowner'
   const displayInitial = (ownerNames || handle)[0].toUpperCase()
@@ -736,36 +1003,37 @@ export default function VisualProfilePage() {
       : gridPosts.filter((p) => p.room_id === selectedRoomFilter)
 
   return (
-    <div className="pb-12 bg-[#151815] min-h-screen">
-      {/* 1. Profile Identity Section */}
-      <div className="px-5 pt-4 pb-3 space-y-3">
+    <div className="pb-16 bg-[#111111] min-h-screen text-[#EDEDED] font-sans">
+      {/* 1. Profile Identity Section with Larger Avatar & Prominent @Handle */}
+      <div className="px-5 pt-6 pb-4 space-y-4 max-w-2xl mx-auto">
         <div className="flex items-center justify-between">
-          <p className="text-[11px] font-semibold tracking-widest uppercase text-[#9C9A92]">
+          <p className="text-[10px] font-bold tracking-widest uppercase text-[#888]">
             PROFILE
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <Link
               href="/timeline"
-              className="text-[11px] font-medium text-[#F2EFE9] bg-[#222B22] hover:bg-[#2B362B] border border-[#344234] px-3 py-1 rounded-full transition-colors"
+              className="text-xs font-semibold text-white bg-[#1A1A1A] hover:bg-[#262626] border border-[#2A2A2A] px-3.5 py-1.5 rounded-full transition-colors"
             >
               Logbook
             </Link>
             <Link
               href="/settings"
-              className="text-[11px] font-medium text-[#F2EFE9] bg-[#1E221E] hover:bg-[#282D28] border border-[#323832] px-3 py-1 rounded-full transition-colors"
+              className="text-xs font-semibold text-white bg-[#1A1A1A] hover:bg-[#262626] border border-[#2A2A2A] px-3.5 py-1.5 rounded-full transition-colors"
             >
               Edit Profile
             </Link>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-5">
+          {/* Larger Profile Picture Container */}
           <button
             type="button"
             onClick={() => hasStories && setStoryIndex(0)}
             className={`relative shrink-0 rounded-full p-0.5 transition-transform ${
               hasStories
-                ? 'bg-gradient-to-tr from-[#8FA680] via-[#C6A467] to-[#6D855E] cursor-pointer active:scale-95'
+                ? 'bg-gradient-to-tr from-cyan-500 via-purple-500 to-pink-500 cursor-pointer active:scale-95 animate-rgb'
                 : 'bg-transparent cursor-default'
             }`}
           >
@@ -773,75 +1041,86 @@ export default function VisualProfilePage() {
               <img
                 src={avatarUrl}
                 alt={ownerNames || handle}
-                className="w-20 h-20 rounded-full object-cover border-2 border-[#151815]"
+                className="w-24 h-24 rounded-full object-cover border-2 border-[#111]"
               />
             ) : (
-              <div className="w-20 h-20 rounded-full bg-[#263126] text-[#8FA680] flex items-center justify-center text-2xl font-semibold border-2 border-[#151815]">
+              <div className="w-24 h-24 rounded-full bg-[#1E1E1E] text-white flex items-center justify-center text-3xl font-bold tracking-tight border-2 border-[#111]">
                 {displayInitial}
               </div>
             )}
             {hasStories && (
-              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-[#8FA680] text-[#121612] text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-[#151815]">
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-[#111]">
                 {activeStories.length} Story
               </span>
             )}
           </button>
 
-          <div className="space-y-0.5 min-w-0">
-            <h1 className="text-xl font-semibold text-[#F2EFE9] truncate leading-tight">
-              {ownerNames || `@${handle}`}
+          {/* Prominent Handle First, Name Underneath */}
+          <div className="space-y-1 min-w-0">
+            <h1 className="text-xl font-bold tracking-tight text-white truncate leading-tight">
+              @{handle}
             </h1>
-            <p className="text-xs text-[#9C9A92]">@{handle}</p>
-            {bio && <p className="text-xs text-[#D5D2C8] line-clamp-2 pt-0.5">{bio}</p>}
-            {location && <p className="text-xs font-medium text-[#C6A467] pt-0.5">{location}</p>}
+            <p className="text-sm font-medium text-[#A3A3A3] truncate">
+              {ownerNames || houseTitle}
+            </p>
+            {bio && <p className="text-xs text-[#888] line-clamp-2 pt-0.5">{bio}</p>}
+            {location && <p className="text-xs font-medium text-[#777] pt-0.5">{location}</p>}
           </div>
         </div>
 
-        {/* Stats Row */}
-        <div className="flex items-center justify-between pt-2 text-xs text-[#C5C2B8] border-t border-[#262B26]">
+        {/* Stats Row with Followers & Following */}
+        <div className="flex items-center justify-between pt-3 text-xs font-medium text-[#A3A3A3] border-t border-[#222]">
           <span>
-            Houses: <strong className="font-semibold text-[#F2EFE9]">1</strong>
+            Houses: <strong className="font-bold text-white">1</strong>
           </span>
           <span>
-            Rooms: <strong className="font-semibold text-[#F2EFE9]">{rooms.length}</strong>
+            Rooms: <strong className="font-bold text-white">{rooms.length}</strong>
           </span>
           <span>
-            Posts: <strong className="font-semibold text-[#F2EFE9]">{gridPosts.length}</strong>
+            Posts: <strong className="font-bold text-white">{gridPosts.length}</strong>
+          </span>
+          <span>
+            Followers: <strong className="font-bold text-white">{followersCount}</strong>
+          </span>
+          <span>
+            Following: <strong className="font-bold text-white">{followingCount}</strong>
           </span>
         </div>
       </div>
 
-      {/* 2. Full-Width Deep Forest Milestone Band */}
-      <div className="bg-[#1D241D] border-y border-[#2D382D] px-5 py-3.5 space-y-2.5">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-[#F2EFE9]">Renovation Stage</span>
-          <span className="text-[11px] font-semibold text-[#8FA680]">{avgProgress}% Complete</span>
-        </div>
-
-        <div className="relative pt-1">
-          <div className="w-full h-2 bg-[#121512] rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#8FA680] rounded-full transition-all duration-500"
-              style={{ width: `${Math.max(12, avgProgress)}%` }}
-            />
+      {/* 2. Milestone Band */}
+      <div className="bg-[#161616] border-y border-[#222] px-5 py-4 space-y-3">
+        <div className="max-w-2xl mx-auto space-y-3 w-full">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-white">Renovation Stage</span>
+            <span className="text-xs font-bold text-[#CCC]">{avgProgress}% Complete</span>
           </div>
-          <div className="flex justify-between text-[10px] font-medium text-[#7D7B73] pt-1.5">
-            <span className={avgProgress >= 0 ? 'text-[#C6A467] font-semibold' : ''}>Planning</span>
-            <span className={avgProgress >= 40 ? 'text-[#C6A467] font-semibold' : ''}>Structural</span>
-            <span className={avgProgress >= 80 ? 'text-[#C6A467] font-semibold' : ''}>Interior Style</span>
+
+          <div className="relative pt-1">
+            <div className="w-full h-2.5 bg-[#0D0D0D] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-full transition-all duration-500"
+                style={{ width: `${Math.max(12, avgProgress)}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-[11px] font-semibold text-[#777] pt-2">
+              <span className={avgProgress >= 0 ? 'text-white' : ''}>Planning</span>
+              <span className={avgProgress >= 40 ? 'text-white' : ''}>Structural</span>
+              <span className={avgProgress >= 80 ? 'text-white' : ''}>Interior Style</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 3. Clean Underlined Tabs (Posts First, My House Second) */}
-      <div className="px-5 pt-2 border-b border-[#2A302A] flex items-center justify-between bg-[#151815]">
+      {/* 3. Clean Underlined Tabs */}
+      <div className="px-5 pt-3 border-b border-[#222] flex items-center justify-center gap-8 bg-[#111] sticky top-[57px] z-40">
         <button
           type="button"
           onClick={() => setActiveTab('posts')}
-          className={`pb-2.5 text-xs font-semibold transition-colors border-b-2 ${
+          className={`pb-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
             activeTab === 'posts'
-              ? 'border-[#8FA680] text-[#F2EFE9]'
-              : 'border-transparent text-[#8B8982] hover:text-[#D5D2C8]'
+              ? 'border-white text-white'
+              : 'border-transparent text-[#777] hover:text-[#CCC]'
           }`}
         >
           Posts ({gridPosts.length})
@@ -850,10 +1129,10 @@ export default function VisualProfilePage() {
         <button
           type="button"
           onClick={() => setActiveTab('house')}
-          className={`pb-2.5 text-xs font-semibold transition-colors border-b-2 ${
+          className={`pb-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
             activeTab === 'house'
-              ? 'border-[#8FA680] text-[#F2EFE9]'
-              : 'border-transparent text-[#8B8982] hover:text-[#D5D2C8]'
+              ? 'border-white text-white'
+              : 'border-transparent text-[#777] hover:text-[#CCC]'
           }`}
         >
           My House
@@ -862,28 +1141,28 @@ export default function VisualProfilePage() {
         <button
           type="button"
           onClick={() => setActiveTab('pinned_ideas')}
-          className={`pb-2.5 text-xs font-semibold transition-colors border-b-2 ${
+          className={`pb-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
             activeTab === 'pinned_ideas'
-              ? 'border-[#8FA680] text-[#F2EFE9]'
-              : 'border-transparent text-[#8B8982] hover:text-[#D5D2C8]'
+              ? 'border-white text-white'
+              : 'border-transparent text-[#777] hover:text-[#CCC]'
           }`}
         >
           Pinned Ideas ({savedPins.length})
         </button>
       </div>
 
-      {/* TAB 1: POSTS GRID (Instagram 4:5 Portrait Grid) */}
+      {/* TAB 1: PINTEREST-STYLE MASONRY GRID */}
       {activeTab === 'posts' && (
-        <div className="pt-3 space-y-3">
+        <div className="pt-4 px-3 max-w-5xl mx-auto space-y-4">
           {rooms.length > 0 && (
-            <div className="px-5 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-2 px-2">
               <button
                 type="button"
                 onClick={() => setSelectedRoomFilter('all')}
-                className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-medium transition-colors ${
+                className={`shrink-0 px-4 py-2 rounded-full text-xs font-semibold transition-colors ${
                   selectedRoomFilter === 'all'
-                    ? 'bg-[#8FA680] text-[#121612] font-semibold'
-                    : 'bg-[#1E221E] text-[#C5C2B8] border border-[#2E332E]'
+                    ? 'bg-white text-black shadow-sm'
+                    : 'bg-[#1C1C1C] text-[#AAA] border border-[#2A2A2A]'
                 }`}
               >
                 All Rooms
@@ -893,10 +1172,10 @@ export default function VisualProfilePage() {
                   key={room.id}
                   type="button"
                   onClick={() => setSelectedRoomFilter(room.id)}
-                  className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-medium transition-colors ${
+                  className={`shrink-0 px-4 py-2 rounded-full text-xs font-semibold transition-colors ${
                     selectedRoomFilter === room.id
-                      ? 'bg-[#8FA680] text-[#121612] font-semibold'
-                      : 'bg-[#1E221E] text-[#C5C2B8] border border-[#2E332E]'
+                      ? 'bg-white text-black shadow-sm'
+                      : 'bg-[#1C1C1C] text-[#AAA] border border-[#2A2A2A]'
                   }`}
                 >
                   {room.name}
@@ -906,71 +1185,73 @@ export default function VisualProfilePage() {
           )}
 
           {visiblePosts.length === 0 ? (
-            <div className="mx-5 p-8 rounded-2xl bg-[#1E221E] border border-[#2E332E] text-center space-y-2">
-              <p className="text-xs text-[#9C9A92]">No photos or videos posted yet.</p>
+            <div className="mx-5 p-10 rounded-2xl bg-[#181818] border border-[#262626] text-center space-y-3">
+              <p className="text-xs font-medium text-[#888]">No photos or videos posted yet.</p>
               <Link
                 href="/upload"
-                className="inline-block px-4 py-2 rounded-full bg-[#8FA680] text-[#121612] text-xs font-semibold"
+                className="inline-block px-5 py-2.5 rounded-full bg-white text-black text-xs font-semibold"
               >
                 + Post First Update
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-0.5 bg-[#0E100E]">
+            /* Pinterest Masonry Layout */
+            <div className="columns-2 sm:columns-3 md:columns-4 gap-3 space-y-3">
               {visiblePosts.map((post) => {
                 const isVideo = post.media_type === 'video'
                 const hasSpecs = Array.isArray(post.specs) && post.specs.length > 0
                 return (
-                  <button
-                    key={post.id}
-                    type="button"
-                    onClick={() => setSelectedPost(post)}
-                    className="relative aspect-[4/5] bg-[#1E221E] overflow-hidden group text-left focus:outline-none"
-                  >
-                    {post.image_url ? (
-                      isVideo ? (
-                        <video
-                          src={post.image_url}
-                          muted
-                          playsInline
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                        />
+                  <div key={post.id} className="break-inside-avoid">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPost(post)}
+                      className="relative w-full rounded-2xl overflow-hidden bg-[#1A1A1A] group text-left focus:outline-none block shadow-md hover:ring-2 hover:ring-white/40 transition-all"
+                    >
+                      {post.image_url ? (
+                        isVideo ? (
+                          <video
+                            src={post.image_url}
+                            muted
+                            playsInline
+                            className="w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <img
+                            src={post.image_url}
+                            alt={post.caption || 'Renovation photo'}
+                            className="w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        )
                       ) : (
-                        <img
-                          src={post.image_url}
-                          alt={post.caption || 'Renovation photo'}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                        />
-                      )
-                    ) : (
-                      <div className="w-full h-full p-2.5 flex flex-col justify-between bg-[#1D241D]">
-                        <span className="text-[9px] uppercase tracking-wider font-semibold text-[#8FA680]">
-                          {getRoomName(post.room_id)}
+                        <div className="w-full p-4 flex flex-col justify-between bg-[#1C1C1C] min-h-[140px]">
+                          <span className="text-[10px] uppercase tracking-wider font-semibold text-[#888]">
+                            {getRoomName(post.room_id)}
+                          </span>
+                          <p className="text-xs text-[#DDD] line-clamp-5 leading-snug pt-2">
+                            {post.caption || post.stage || 'Note'}
+                          </p>
+                        </div>
+                      )}
+
+                      {isVideo && (
+                        <span className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-black/75 text-white flex items-center justify-center text-[10px] shadow">
+                          ▶
                         </span>
-                        <p className="text-[11px] text-[#E5E2DA] line-clamp-5 leading-snug">
-                          {post.caption || post.stage || 'Note'}
-                        </p>
-                      </div>
-                    )}
+                      )}
 
-                    {isVideo && (
-                      <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/75 text-white flex items-center justify-center text-[9px]">
-                        ▶
-                      </span>
-                    )}
+                      {!isVideo && hasSpecs && (
+                        <span className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-black/70 text-white flex items-center justify-center text-xs shadow">
+                          🏷
+                        </span>
+                      )}
 
-                    {!isVideo && hasSpecs && (
-                      <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/70 text-[#C6A467] flex items-center justify-center text-[10px]">
-                        🏷
-                      </span>
-                    )}
-
-                    {selectedRoomFilter === 'all' && post.room_id && post.image_url && (
-                      <span className="absolute bottom-1.5 left-1.5 max-w-[85%] truncate bg-black/75 backdrop-blur-xs text-[#F2EFE9] text-[9px] font-medium px-1.5 py-0.5 rounded">
-                        {getRoomName(post.room_id)}
-                      </span>
-                    )}
-                  </button>
+                      {post.room_id && post.image_url && (
+                        <div className="absolute bottom-2.5 left-2.5 max-w-[85%] truncate bg-black/50 backdrop-blur-md border border-white/15 text-white text-[10px] font-medium px-2.5 py-1 rounded-full shadow">
+                          {getRoomName(post.room_id)}
+                        </div>
+                      )}
+                    </button>
+                  </div>
                 )
               })}
             </div>
@@ -980,14 +1261,14 @@ export default function VisualProfilePage() {
 
       {/* TAB 2: MY HOUSE */}
       {activeTab === 'house' && (
-        <div className="px-5 pt-4 space-y-4">
-          <div className="rounded-2xl bg-[#1C221C] border border-[#2F3B2F] p-4 space-y-3">
+        <div className="px-5 pt-4 max-w-2xl mx-auto space-y-4">
+          <div className="rounded-2xl bg-[#181818] border border-[#262626] p-5 space-y-3.5">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <h2 className="text-base font-semibold text-[#F2EFE9]">{houseTitle}</h2>
-                <p className="text-[11px] text-[#9C9A92]">{houseEra}</p>
+                <h2 className="text-sm font-bold text-white">{houseTitle}</h2>
+                <p className="text-xs text-[#888]">{houseEra}</p>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-[#141814] border border-[#2E382E] text-[11px] font-semibold text-[#8FA680]">
+              <span className="px-3 py-1 rounded-full bg-[#111] border border-[#262626] text-xs font-semibold text-white">
                 {avgProgress}% Complete
               </span>
             </div>
@@ -1002,43 +1283,43 @@ export default function VisualProfilePage() {
             )}
           </div>
 
-          <div className="rounded-2xl bg-[#1E221E] border border-[#2E332E] p-4 space-y-2.5">
+          <div className="rounded-2xl bg-[#181818] border border-[#262626] p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-[#9C9A92]">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#888]">
                 House Specs & Paints ({pinnedProducts.length})
               </h3>
               <button
                 type="button"
                 onClick={() => setShowPinProductModal(true)}
-                className="text-xs font-medium text-[#8FA680] underline"
+                className="text-xs font-semibold text-white underline hover:text-[#CCC]"
               >
                 + Add Spec
               </button>
             </div>
 
             {pinnedProducts.length === 0 ? (
-              <p className="text-xs text-[#8B8982]">
+              <p className="text-xs text-[#777]">
                 Save your paint colours, flooring, and hardware specs here for easy reference.
               </p>
             ) : (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 {pinnedProducts.map((item) => (
                   <div
                     key={item.id}
-                    className="p-2.5 rounded-xl bg-[#151815] border border-[#2A302A] space-y-1 relative"
+                    className="p-3 rounded-xl bg-[#111] border border-[#262626] space-y-1.5 relative"
                   >
                     <button
                       type="button"
                       onClick={() => removePinnedProduct(item.id)}
-                      className="absolute top-1.5 right-2 text-xs text-[#7D7B73] hover:text-red-400"
+                      className="absolute top-2 right-2.5 text-sm text-[#777] hover:text-red-400"
                     >
                       ×
                     </button>
-                    <span className="inline-block text-[9px] px-1.5 py-0.5 rounded bg-[#232D23] text-[#8FA680] font-medium">
+                    <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-[#222] text-[#CCC] font-semibold">
                       {item.brand}
                     </span>
-                    <p className="text-xs font-semibold text-[#F2EFE9] line-clamp-1">{item.name}</p>
-                    <p className="text-[10px] text-[#9C9A92]">
+                    <p className="text-xs font-bold text-white line-clamp-1">{item.name}</p>
+                    <p className="text-[11px] text-[#888]">
                       {item.price || 'Saved'} {item.room ? `· ${item.room}` : ''}
                     </p>
                   </div>
@@ -1051,16 +1332,16 @@ export default function VisualProfilePage() {
 
       {/* TAB 3: PINNED IDEAS MOODBOARD */}
       {activeTab === 'pinned_ideas' && (
-        <div className="px-5 pt-4 space-y-3">
+        <div className="px-5 pt-4 max-w-2xl mx-auto space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-semibold text-[#F2EFE9]">Pinned Ideas & Looks</h2>
-              <p className="text-[11px] text-[#9C9A92]">Saved inspiration, paint shades & layouts</p>
+              <h2 className="text-sm font-bold text-white">Pinned Ideas & Looks</h2>
+              <p className="text-xs text-[#888]">Saved inspiration, paint shades & layouts</p>
             </div>
             <button
               type="button"
               onClick={() => setShowPinIdeaModal(true)}
-              className="px-3 py-1.5 rounded-full bg-[#8FA680] text-[#121612] text-xs font-semibold"
+              className="px-4 py-2 rounded-full bg-white text-black text-xs font-semibold shadow-sm hover:bg-[#E0E0E0]"
             >
               + Pin Idea
             </button>
@@ -1070,48 +1351,48 @@ export default function VisualProfilePage() {
             <button
               type="button"
               onClick={() => setShowPinIdeaModal(true)}
-              className="w-full p-6 rounded-2xl bg-[#1C221C] border border-dashed border-[#495B42] text-xs text-[#F2EFE9] text-center space-y-1"
+              className="w-full p-8 rounded-2xl bg-[#181818] border border-dashed border-[#333] text-sm text-white text-center space-y-1.5"
             >
-              <p className="font-semibold text-[#8FA680]">Start your Pinned Ideas board</p>
-              <p className="text-[11px] text-[#9C9A92]">
+              <p className="text-xs font-bold text-white">Start your Pinned Ideas board</p>
+              <p className="text-[11px] text-[#888]">
                 Save kitchen layouts, paint shades, or garden inspiration you love.
               </p>
             </button>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="columns-2 gap-3 space-y-3">
               {savedPins.map((pin) => (
                 <div
                   key={pin.id}
-                  className="rounded-2xl bg-[#1E221E] border border-[#2E332E] overflow-hidden flex flex-col justify-between relative"
+                  className="break-inside-avoid rounded-2xl bg-[#181818] border border-[#262626] overflow-hidden flex flex-col justify-between relative shadow-md"
                 >
                   <button
                     type="button"
                     onClick={() => handleDeleteIdea(pin.id)}
                     title="Remove pin"
-                    className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-black/75 text-white text-xs flex items-center justify-center"
+                    className="absolute top-2.5 right-2.5 z-10 w-7 h-7 rounded-full bg-black/75 text-white text-xs flex items-center justify-center shadow"
                   >
                     ×
                   </button>
 
                   {pin.image_url ? (
-                    <img src={pin.image_url} alt={pin.title} className="w-full h-36 object-cover bg-[#121512]" />
+                    <img src={pin.image_url} alt={pin.title} className="w-full object-cover bg-[#0D0D0D]" />
                   ) : (
-                    <div className="w-full h-24 bg-[#222B22] p-3 flex items-end">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8FA680]">
+                    <div className="w-full h-24 bg-[#141414] p-3.5 flex items-end">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#888]">
                         {pin.category || 'Idea'}
                       </span>
                     </div>
                   )}
 
-                  <div className="p-3 space-y-1.5 flex-1 flex flex-col justify-between">
+                  <div className="p-3.5 space-y-2 flex-1 flex flex-col justify-between">
                     <div>
                       {pin.image_url && pin.category && (
-                        <span className="text-[9px] font-semibold uppercase tracking-wider text-[#8FA680]">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#888]">
                           {pin.category}
                         </span>
                       )}
-                      <p className="text-xs font-semibold text-[#F2EFE9] line-clamp-2">{pin.title}</p>
-                      {pin.notes && <p className="text-[11px] text-[#9C9A92] line-clamp-2 mt-0.5">{pin.notes}</p>}
+                      <p className="text-xs font-bold text-white line-clamp-2">{pin.title}</p>
+                      {pin.notes && <p className="text-[11px] text-[#888] line-clamp-2 pt-1">{pin.notes}</p>}
                     </div>
 
                     {pin.source_url && (
@@ -1119,7 +1400,7 @@ export default function VisualProfilePage() {
                         href={pin.source_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-block text-[11px] font-medium text-[#C6A467] underline pt-1"
+                        className="inline-block text-[11px] font-semibold text-white underline pt-1"
                       >
                         Open Link →
                       </a>
@@ -1135,28 +1416,28 @@ export default function VisualProfilePage() {
       {/* Lightbox Modal */}
       {selectedPost && (
         <div
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xs flex items-center justify-center p-4"
           onClick={() => setSelectedPost(null)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl bg-[#1E221E] border border-[#323832] overflow-hidden shadow-2xl space-y-3"
+            className="w-full max-w-md rounded-2xl bg-[#181818] border border-[#262626] overflow-hidden shadow-2xl space-y-3.5"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-4 py-3 flex items-center justify-between border-b border-[#2C322C]">
+            <div className="px-4 py-3.5 flex items-center justify-between border-b border-[#262626]">
               <div>
-                <p className="text-xs font-semibold text-[#F2EFE9]">{getRoomName(selectedPost.room_id)}</p>
+                <p className="text-xs font-bold text-white">{getRoomName(selectedPost.room_id)}</p>
                 {selectedPost.stage && (
-                  <p className="text-[10px] text-[#8FA680] font-medium">{selectedPost.stage}</p>
+                  <p className="text-[11px] text-[#888] font-medium">{selectedPost.stage}</p>
                 )}
               </div>
               <div className="flex items-center gap-3">
-                <Link href="/timeline" className="text-xs font-medium text-[#C6A467] underline">
+                <Link href="/timeline" className="text-xs font-semibold text-white underline">
                   Edit in Logbook
                 </Link>
                 <button
                   type="button"
                   onClick={() => setSelectedPost(null)}
-                  className="w-7 h-7 rounded-full bg-[#2A302A] text-[#F2EFE9] flex items-center justify-center text-sm"
+                  className="w-8 h-8 rounded-full bg-[#262626] text-white flex items-center justify-center text-base"
                 >
                   ×
                 </button>
@@ -1166,19 +1447,19 @@ export default function VisualProfilePage() {
             {selectedPost.image_url && (
               <div className="bg-black">
                 {selectedPost.media_type === 'video' ? (
-                  <video src={selectedPost.image_url} controls autoPlay playsInline className="w-full max-h-96" />
+                  <video src={selectedPost.image_url} controls autoPlay playsInline className="w-full max-h-[75vh]" />
                 ) : (
-                  <img src={selectedPost.image_url} alt="" className="w-full max-h-96 object-contain mx-auto" />
+                  <img src={selectedPost.image_url} alt="" className="w-full max-h-[75vh] object-contain mx-auto" />
                 )}
               </div>
             )}
 
-            <div className="px-4 pb-4 space-y-2">
-              {selectedPost.caption && <p className="text-xs text-[#E5E2DA] leading-relaxed">{selectedPost.caption}</p>}
+            <div className="px-4 pb-5 space-y-2.5">
+              {selectedPost.caption && <p className="text-xs text-[#DDD] leading-relaxed">{selectedPost.caption}</p>}
               {selectedPost.specs && selectedPost.specs.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-1">
+                <div className="flex flex-wrap gap-2 pt-1">
                   {selectedPost.specs.map((s, i) => (
-                    <span key={i} className="text-[10px] px-2 py-0.5 rounded bg-[#253025] text-[#8FA680] font-medium">
+                    <span key={i} className="text-[11px] px-2.5 py-1 rounded bg-[#222] text-[#CCC] font-semibold">
                       {s}
                     </span>
                   ))}
@@ -1192,7 +1473,7 @@ export default function VisualProfilePage() {
       {/* Full-Screen 24h Story Viewer */}
       {storyIndex !== null && activeStories[storyIndex] && (
         <div
-          className="fixed inset-0 z-50 bg-black text-white flex flex-col justify-between p-4"
+          className="fixed inset-0 z-50 bg-black text-white flex flex-col justify-between p-5"
           onClick={() =>
             storyIndex + 1 < activeStories.length ? setStoryIndex(storyIndex + 1) : setStoryIndex(null)
           }
@@ -1201,12 +1482,12 @@ export default function VisualProfilePage() {
             <div className="flex gap-1">
               {activeStories.map((_, idx) => (
                 <div key={idx} className="h-1 flex-1 rounded-full bg-white/25 overflow-hidden">
-                  <div className={`h-full bg-[#8FA680] ${idx <= storyIndex ? 'w-full' : 'w-0'}`} />
+                  <div className={`h-full bg-white ${idx <= storyIndex ? 'w-full' : 'w-0'}`} />
                 </div>
               ))}
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold">
+              <span className="font-bold">
                 {getRoomName(activeStories[storyIndex].room_id)} · 24h Story
               </span>
               <button
@@ -1215,7 +1496,7 @@ export default function VisualProfilePage() {
                   e.stopPropagation()
                   setStoryIndex(null)
                 }}
-                className="px-2.5 py-1 rounded-full bg-white/15 text-white"
+                className="px-3 py-1.5 rounded-full bg-white/15 text-white text-xs font-semibold"
               >
                 Close ×
               </button>
@@ -1239,12 +1520,12 @@ export default function VisualProfilePage() {
                 />
               )
             ) : (
-              <p className="text-lg font-medium text-center px-6">{activeStories[storyIndex].caption}</p>
+              <p className="text-lg font-bold text-center px-6">{activeStories[storyIndex].caption}</p>
             )}
           </div>
 
           {activeStories[storyIndex].caption && activeStories[storyIndex].image_url && (
-            <p className="text-center text-sm bg-black/65 px-4 py-2.5 rounded-2xl">
+            <p className="text-center text-xs bg-black/80 px-5 py-3 rounded-2xl font-medium">
               {activeStories[storyIndex].caption}
             </p>
           )}
@@ -1254,33 +1535,33 @@ export default function VisualProfilePage() {
       {/* Modal: Pin New Idea */}
       {showPinIdeaModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
           onClick={() => setShowPinIdeaModal(false)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl bg-[#1E221E] border border-[#343B34] p-5 space-y-3.5 shadow-2xl"
+            className="w-full max-w-sm rounded-2xl bg-[#181818] border border-[#333] p-5 space-y-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-[#F2EFE9]">Pin an Inspiration Idea</h2>
-              <button type="button" onClick={() => setShowPinIdeaModal(false)} className="text-[#9C9A92] text-lg">
+              <h2 className="text-sm font-bold text-white">Pin an Inspiration Idea</h2>
+              <button type="button" onClick={() => setShowPinIdeaModal(false)} className="text-[#888] text-xl">
                 ×
               </button>
             </div>
 
-            <form onSubmit={handleCreateIdea} className="space-y-3">
+            <form onSubmit={handleCreateIdea} className="space-y-3.5">
               <input
                 type="text"
                 required
-                placeholder="Idea title (e.g., Sage Shaker Kitchen Island)"
+                placeholder="Idea title (e.g., Shaker Kitchen Island)"
                 value={newIdea.title}
                 onChange={(e) => setNewIdea({ ...newIdea, title: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl"
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
               />
               <select
                 value={newIdea.category}
                 onChange={(e) => setNewIdea({ ...newIdea, category: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] border border-[#323832] rounded-xl"
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white border border-[#262626] rounded-xl"
               >
                 <option value="Interior Look">Interior Look</option>
                 <option value="Exterior & Garden">Exterior & Garden</option>
@@ -1288,7 +1569,7 @@ export default function VisualProfilePage() {
                 <option value="Bathroom">Bathroom</option>
                 <option value="Paint & Materials">Paint & Materials</option>
               </select>
-              <label className="block cursor-pointer px-3 py-2.5 text-xs bg-[#141714] border border-dashed border-[#495B42] rounded-xl text-[#9C9A92]">
+              <label className="block cursor-pointer px-3.5 py-3 text-xs bg-[#111] border border-dashed border-[#333] rounded-xl text-[#888]">
                 {ideaFile ? `Selected: ${ideaFile.name}` : '+ Attach inspiration screenshot (optional)'}
                 <input
                   type="file"
@@ -1302,19 +1583,19 @@ export default function VisualProfilePage() {
                 placeholder="Source link (optional https://...)"
                 value={newIdea.source_url}
                 onChange={(e) => setNewIdea({ ...newIdea, source_url: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl"
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
               />
               <textarea
                 rows={2}
                 placeholder="Why you like it..."
                 value={newIdea.notes}
                 onChange={(e) => setNewIdea({ ...newIdea, notes: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl resize-none"
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl resize-none"
               />
               <button
                 type="submit"
                 disabled={pinningIdea}
-                className="w-full py-2.5 bg-[#8FA680] text-[#121612] text-xs font-semibold rounded-xl"
+                className="w-full py-3 bg-white text-black text-xs font-bold rounded-xl shadow-sm hover:bg-[#E0E0E0]"
               >
                 {pinningIdea ? 'Pinning...' : 'Save to Pinned Ideas'}
               </button>
@@ -1326,48 +1607,48 @@ export default function VisualProfilePage() {
       {/* Modal: Pin Product Spec */}
       {showPinProductModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
           onClick={() => setShowPinProductModal(false)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl bg-[#1E221E] border border-[#343B34] p-5 space-y-3.5 shadow-2xl"
+            className="w-full max-w-sm rounded-2xl bg-[#181818] border border-[#333] p-5 space-y-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-[#F2EFE9]">Pin Paint or Product Spec</h2>
-              <button type="button" onClick={() => setShowPinProductModal(false)} className="text-[#9C9A92] text-lg">
+              <h2 className="text-sm font-bold text-white">Pin Paint or Product Spec</h2>
+              <button type="button" onClick={() => setShowPinProductModal(false)} className="text-[#888] text-xl">
                 ×
               </button>
             </div>
-            <form onSubmit={handleAddPinnedProduct} className="space-y-2.5">
+            <form onSubmit={handleAddPinnedProduct} className="space-y-3">
               <input
                 type="text"
                 required
                 placeholder="Product / Paint name"
                 value={newProduct.name}
                 onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl"
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
               />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 <input
                   type="text"
                   placeholder="Brand"
                   value={newProduct.brand}
                   onChange={(e) => setNewProduct({ ...newProduct, brand: e.target.value })}
-                  className="px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl"
+                  className="px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
                 />
                 <input
                   type="text"
                   placeholder="Price (e.g. £56)"
                   value={newProduct.price}
                   onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-                  className="px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl"
+                  className="px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
                 />
               </div>
               <select
                 value={newProduct.room}
                 onChange={(e) => setNewProduct({ ...newProduct, room: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] border border-[#323832] rounded-xl"
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white border border-[#262626] rounded-xl"
               >
                 <option value="">Whole House</option>
                 {rooms.map((r) => (
@@ -1379,7 +1660,7 @@ export default function VisualProfilePage() {
               <button
                 type="submit"
                 disabled={pinningProduct}
-                className="w-full py-2.5 bg-[#8FA680] text-[#121612] text-xs font-semibold rounded-xl"
+                className="w-full py-3 bg-white text-black text-xs font-bold rounded-xl shadow-sm hover:bg-[#E0E0E0]"
               >
                 {pinningProduct ? 'Saving...' : 'Pin Spec'}
               </button>
@@ -1390,29 +1671,375 @@ export default function VisualProfilePage() {
     </div>
   )
 }
-==> app/layout.tsx <==
-import type { Metadata, Viewport } from 'next'
+==> app/feed/page.tsx <==
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+import type { User } from '@supabase/supabase-js'
+
+interface FeedPost {
+  id: string
+  user_id: string
+  room_id: string | null
+  stage: string | null
+  caption: string | null
+  image_url: string | null
+  media_type: 'image' | 'video' | null
+  specs: string[] | null
+  cost: number | null
+  created_at: string
+  author_handle?: string
+  author_avatar?: string
+  likes_count: number
+  is_liked: boolean
+  comments: { id: string; user_handle: string; content: string; created_at: string }[]
+}
+
+export default function CommunityFeedPage() {
+  const router = useRouter()
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [feedTab, setFeedTab] = useState<'discover' | 'following'>('discover')
+  const [posts, setPosts] = useState<FeedPost[]>([])
+  const [followingIds, setFollowingIds] = useState<string[]>([])
+  const [hashtagFilter, setHashtagFilter] = useState<string | null>(null)
+
+  // Comment input state per post ID
+  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({})
+  const [activeCommentPostId, setActiveCommentPostId] = useState<string | null>(null)
+
+  const fetchFeed = async (currentUser: User, currentFollowing: string[]) => {
+    // Fetch real posts from Supabase
+    const { data: postData } = await supabase
+      .from('posts')
+      .select('*')
+      .eq('is_story', false)
+      .order('created_at', { ascending: false })
+
+    // Seed/Fallback demo posts if database is new/empty to solve empty feed problem
+    const demoPosts: FeedPost[] = [
+      {
+        id: 'demo-1',
+        user_id: 'builder-1',
+        room_id: null,
+        stage: 'Painting & Decorating',
+        caption: 'Finished our 1930s hallway panelling and painted in Farrow & Ball Ammonite. Absolute game changer for the entryway! #panelling #hallway #1930shouse',
+        image_url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+        media_type: 'image',
+        specs: ['Farrow & Ball Ammonite', 'MDF Panelling'],
+        cost: 240,
+        created_at: new Date(Date.now() - 3600000 * 3).toISOString(),
+        author_handle: 'nathanspurdle',
+        likes_count: 14,
+        is_liked: true,
+        comments: [
+          { id: 'c1', user_handle: 'sarah_reno', content: 'Looks so crisp! Love the color choice.', created_at: '' },
+        ],
+      },
+      {
+        id: 'demo-2',
+        user_id: 'builder-2',
+        room_id: null,
+        stage: 'Second Fix & Flooring',
+        caption: 'Laying down light oak herringbone flooring across the open plan kitchen diner. Tedious cuts around the fireplace but totally worth it! #herringbone #flooring #kitchendiner',
+        image_url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80',
+        media_type: 'image',
+        specs: ['Engineered Oak Herringbone', 'Bostik Adhesive'],
+        cost: 1450,
+        created_at: new Date(Date.now() - 3600000 * 12).toISOString(),
+        author_handle: 'victorian_renovator',
+        likes_count: 29,
+        is_liked: false,
+        comments: [],
+      },
+    ]
+
+    const realPosts: FeedPost[] = (postData || []).map((p) => ({
+      ...p,
+      author_handle: p.user_id === currentUser.id ? currentUser.email?.split('@')[0] : 'homeowner_' + p.user_id.slice(0, 5),
+      likes_count: Math.floor(Math.random() * 8) + 1,
+      is_liked: false,
+      comments: [],
+    }))
+
+    const combined = [...realPosts, ...demoPosts]
+    setPosts(combined)
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    const init = async () => {
+      const { data: auth } = await supabase.auth.getUser()
+      if (!auth.user) return router.push('/login')
+      setUser(auth.user)
+
+      // Fetch following IDs
+      const { data: followsData } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', auth.user.id)
+
+      const fIds = (followsData || []).map((f) => f.following_id)
+      setFollowingIds(fIds)
+
+      await fetchFeed(auth.user, fIds)
+    }
+    init()
+  }, [router])
+
+  const toggleLike = (postId: string) => {
+    setPosts((prev) =>
+      prev.map((p) => {
+        if (p.id === postId) {
+          return {
+            ...p,
+            is_liked: !p.is_liked,
+            likes_count: p.is_liked ? p.likes_count - 1 : p.likes_count + 1,
+          }
+        }
+        return p
+      })
+    )
+  }
+
+  const handleAddComment = (postId: string, e: React.FormEvent) => {
+    e.preventDefault()
+    const text = commentInputs[postId]?.trim()
+    if (!text || !user) return
+
+    const handle = user.email?.split('@')[0] || 'homeowner'
+    setPosts((prev) =>
+      prev.map((p) => {
+        if (p.id === postId) {
+          return {
+            ...p,
+            comments: [...p.comments, { id: `${Date.now()}`, user_handle: handle, content: text, created_at: new Date().toISOString() }],
+          }
+        }
+        return p
+      })
+    )
+    setCommentInputs({ ...commentInputs, [postId]: '' })
+  }
+
+  const handleFollowToggle = async (targetUserId: string) => {
+    if (!user) return
+    const isFollowing = followingIds.includes(targetUserId)
+
+    if (isFollowing) {
+      await supabase.from('follows').delete().eq('follower_id', user.id).eq('following_id', targetUserId)
+      setFollowingIds(followingIds.filter((id) => id !== targetUserId))
+    } else {
+      await supabase.from('follows').insert({ follower_id: user.id, following_id: targetUserId })
+      setFollowingIds([...followingIds, targetUserId])
+    }
+  }
+
+  if (loading) return <div className="p-6 text-xs text-[#888]">Loading community feed...</div>
+
+  const displayedPosts = posts
+    .filter((p) => {
+      if (feedTab === 'following' && p.user_id !== user?.id && !followingIds.includes(p.user_id)) {
+        return false
+      }
+      if (hashtagFilter) {
+        return (p.caption || '').toLowerCase().includes(`#${hashtagFilter.toLowerCase()}`)
+      }
+      return true
+    })
+
+  return (
+    <div className="px-5 pt-6 pb-20 space-y-4 bg-[#111111] min-h-screen max-w-xl mx-auto font-sans">
+      {/* Header & Tabs */}
+      <div className="flex items-center justify-between border-b border-[#222] pb-3">
+        <h1 className="text-lg font-bold tracking-tight text-white">HomeWallr Feed</h1>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setFeedTab('discover')}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+              feedTab === 'discover' ? 'bg-white text-black' : 'bg-[#1C1C1C] text-[#888]'
+            }`}
+          >
+            Discover
+          </button>
+          <button
+            type="button"
+            onClick={() => setFeedTab('following')}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+              feedTab === 'following' ? 'bg-white text-black' : 'bg-[#1C1C1C] text-[#888]'
+            }`}
+          >
+            Following
+          </button>
+        </div>
+      </div>
+
+      {hashtagFilter && (
+        <div className="flex items-center justify-between bg-[#1C1C1C] px-3.5 py-2 rounded-xl text-xs">
+          <span className="text-white font-medium">Filtered by #{hashtagFilter}</span>
+          <button type="button" onClick={() => setHashtagFilter(null)} className="text-[#888] hover:text-white">
+            Clear ×
+          </button>
+        </div>
+      )}
+
+      {/* Post Stream */}
+      {displayedPosts.length === 0 ? (
+        <div className="p-10 rounded-2xl bg-[#181818] border border-[#262626] text-center space-y-2">
+          <p className="text-xs text-[#888]">No posts in this feed yet.</p>
+          <Link href="/upload" className="inline-block px-4 py-2 rounded-full bg-white text-black text-xs font-semibold">
+            + Share Your Build
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-5">
+          {displayedPosts.map((post) => {
+            const isSelf = post.user_id === user?.id
+            const isFollowing = followingIds.includes(post.user_id)
+
+            return (
+              <div key={post.id} className="rounded-2xl bg-[#181818] border border-[#262626] overflow-hidden shadow-md space-y-3">
+                {/* Author Header */}
+                <div className="px-4 pt-3.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-500 to-pink-500 text-white font-bold flex items-center justify-center text-xs">
+                      {(post.author_handle || 'U')[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white">@{post.author_handle}</p>
+                      {post.stage && <p className="text-[10px] text-[#888]">{post.stage}</p>}
+                    </div>
+                  </div>
+
+                  {!isSelf && (
+                    <button
+                      type="button"
+                      onClick={() => handleFollowToggle(post.user_id)}
+                      className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-colors ${
+                        isFollowing
+                          ? 'bg-[#262626] text-[#CCC] hover:bg-[#333]'
+                          : 'bg-white text-black hover:bg-[#E0E0E0]'
+                      }`}
+                    >
+                      {isFollowing ? 'Following' : '+ Follow'}
+                    </button>
+                  )}
+                </div>
+
+                {/* Post Media */}
+                {post.image_url && (
+                  <div className="bg-black">
+                    <img src={post.image_url} alt="Renovation post" className="w-full max-h-96 object-cover" />
+                  </div>
+                )}
+
+                {/* Actions & Likes */}
+                <div className="px-4 space-y-2">
+                  <div className="flex items-center gap-4 text-sm">
+                    <button
+                      type="button"
+                      onClick={() => toggleLike(post.id)}
+                      className={`flex items-center gap-1.5 font-medium ${post.is_liked ? 'text-red-500' : 'text-[#AAA] hover:text-white'}`}
+                    >
+                      <span>{post.is_liked ? '❤️' : '🤍'}</span>
+                      <span className="text-xs">{post.likes_count}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveCommentPostId(activeCommentPostId === post.id ? null : post.id)}
+                      className="text-[#AAA] hover:text-white text-xs flex items-center gap-1.5 font-medium"
+                    >
+                      <span>💬</span>
+                      <span>{post.comments.length} Comments</span>
+                    </button>
+
+                    {post.cost && (
+                      <span className="ml-auto text-xs font-bold text-white">£{Number(post.cost).toLocaleString()}</span>
+                    )}
+                  </div>
+
+                  {/* Caption with Highlighted Hashtags */}
+                  {post.caption && (
+                    <p className="text-xs text-white leading-relaxed">
+                      {post.caption.split(' ').map((word, i) => {
+                        if (word.startsWith('#')) {
+                          const tag = word.replace('#', '')
+                          return (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => setHashtagFilter(tag)}
+                              className="text-cyan-400 hover:underline mr-1"
+                            >
+                              {word}{' '}
+                            </button>
+                          )
+                        }
+                        return word + ' '
+                      })}
+                    </p>
+                  )}
+
+                  {/* Specs Tags */}
+                  {post.specs && post.specs.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {post.specs.map((spec, idx) => (
+                        <span key={idx} className="text-[10px] px-2 py-0.5 rounded bg-[#222] text-[#CCC]">
+                          🏷 {spec}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Comments Section */}
+                <div className="bg-[#151515] px-4 py-3 border-t border-[#222] space-y-2.5">
+                  {post.comments.length > 0 && (
+                    <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                      {post.comments.map((c) => (
+                        <div key={c.id} className="text-xs space-y-0.5">
+                          <span className="font-bold text-white mr-1.5">@{c.user_handle}</span>
+                          <span className="text-[#CCC]">{c.content}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <form onSubmit={(e) => handleAddComment(post.id, e)} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Add a comment on this renovation..."
+                      value={commentInputs[post.id] || ''}
+                      onChange={(e) => setCommentInputs({ ...commentInputs, [post.id]: e.target.value })}
+                      className="flex-1 px-3 py-2 text-xs bg-[#1E1E1E] text-white placeholder-[#666] border border-[#2A2A2A] rounded-xl focus:outline-none focus:border-white"
+                    />
+                    <button type="submit" className="px-3.5 py-2 rounded-xl bg-white text-black text-xs font-semibold">
+                      Post
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+==> app/layout.tsx <==
+import type { Metadata } from 'next'
 import './globals.css'
-import { FloorPlanProvider } from '@/components/FloorPlanContext'
+import Link from 'next/link'
 import BottomNav from '@/components/BottomNav'
 
 export const metadata: Metadata = {
-  title: 'HomeWallr',
-  description: 'Your personal House Passport & home renovation logbook.',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'black-translucent',
-    title: 'HomeWallr',
-  },
-}
-
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  themeColor: '#151815',
+  title: 'HomeWallr — Your House Passport & Renovation Journal',
+  description: 'Track your home renovation, floor plans, and house specs.',
 }
 
 export default function RootLayout({
@@ -1421,88 +2048,144 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className="bg-[#0E100E] text-[#F2EFE9] antialiased">
-        <FloorPlanProvider>
-          <div className="w-full sm:max-w-md sm:mx-auto min-h-screen bg-[#151815] sm:border-x sm:border-[#262B26] shadow-2xl relative pb-24">
-            {/* Top Dark Architectural Header */}
-            <header className="sticky top-0 z-30 bg-[#181C18]/95 backdrop-blur-md border-b border-[#2A302A] px-5 py-3.5 flex items-center justify-between">
-              <Link href="/" className="flex items-center gap-2.5 group">
-                {/* Custom HomeWallr House-Bubble Mark */}
-                <svg
-                  className="w-7 h-7 text-[#8FA680] group-hover:text-[#C6A467] transition-colors shrink-0"
-                  viewBox="0 0 36 36"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2.2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M5 16L18 6l13 10" />
-                  <path d="M24 10.5V7h3v5.8" />
-                  <path d="M8 14.5v13l4.5-3.2c1.7.7 3.6 1.1 5.5 1.1 6.1 0 11-4.1 11-9.2v-1.7" />
-                  <path d="M15.2 24.3v-6.5h5.6v6.5" />
+    <html lang="en" className="bg-[#111111]">
+      <body className="bg-[#111111] text-[#EDEDED] antialiased min-h-screen flex flex-col selection:bg-white selection:text-black">
+        
+        {/* Sleek Dark Header with RGB Accent */}
+        <header className="sticky top-0 z-50 bg-[#181818]/95 backdrop-blur-md text-white border-b border-[#262626] px-5 py-3.5 flex items-center justify-between shadow-xs relative overflow-hidden">
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 animate-rgb opacity-80" />
+
+          <Link href="/profile" className="flex items-center gap-2.5 group">
+            {/* New Camera-House Logo Badge */}
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 via-purple-500 to-pink-500 p-0.5 shadow-md animate-rgb group-hover:scale-105 transition-transform flex items-center justify-center">
+              <div className="w-full h-full bg-[#181818] rounded-[10px] flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 10L12 3l9 7v10a2 2 0 01-2 2H5a2 2 0 01-2-2V10z" />
+                  <circle cx="12" cy="14" r="3" />
                 </svg>
-                <span className="text-xl font-serif font-bold tracking-tight text-[#F2EFE9]">
-                  HomeWallr
-                </span>
-              </Link>
-
-              <div className="flex items-center gap-3.5 text-[#9C9A92]">
-                <Link
-                  href="/profile"
-                  className="hover:text-[#F2EFE9] transition-colors"
-                  title="Profile"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                    <circle cx="12" cy="12" r="9.5" />
-                    <circle cx="12" cy="9.5" r="3" />
-                    <path strokeLinecap="round" d="M6.8 18.2a6 6 0 0110.4 0" />
-                  </svg>
-                </Link>
-
-                <Link
-                  href="/notifications"
-                  className="hover:text-[#F2EFE9] transition-colors"
-                  title="Activity"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                    />
-                  </svg>
-                </Link>
-
-                <Link
-                  href="/settings"
-                  className="hover:text-[#F2EFE9] transition-colors"
-                  title="Settings"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                    <circle cx="12" cy="12" r="3" />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9c.26.6.85 1 1.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"
-                    />
-                  </svg>
-                </Link>
               </div>
-            </header>
+            </div>
+            <span className="text-base font-bold tracking-tight text-white font-sans">
+              HomeWallr
+            </span>
+          </Link>
 
-            {/* Main Page Content */}
-            <main>{children}</main>
-
-            {/* Dark Bottom Navigation Bar */}
-            <BottomNav />
+          <div className="flex items-center gap-4 text-xs font-medium text-[#A3A3A3]">
+            <Link href="/profile" className="hover:text-white transition-colors">
+              Profile
+            </Link>
+            <Link href="/timeline" className="hover:text-white transition-colors">
+              Logbook
+            </Link>
+            <Link href="/shop" className="hover:text-white transition-colors">
+              Specs
+            </Link>
+            <Link
+              href="/upload"
+              className="px-3.5 py-1.5 rounded-full bg-white text-black font-semibold hover:bg-[#E0E0E0] transition-colors shadow-xs"
+            >
+              + Post
+            </Link>
           </div>
-        </FloorPlanProvider>
+        </header>
+
+        {/* Main Application Content */}
+        <main className="flex-1 pb-24">
+          {children}
+        </main>
+
+        {/* Fixed Bottom Navigation Bar with Multi-Colored Icons */}
+        <BottomNav />
       </body>
     </html>
   )
 }
+==> app/floorplan/page.tsx <==
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+import type { User } from '@supabase/supabase-js'
+import AIFloorPlan from '@/components/AIFloorPlan'
+
+interface Room {
+  id: string
+  name: string
+  floor_level?: string | null
+  width_m?: number | null
+  length_m?: number | null
+  status: string
+  progress: number
+}
+
+export default function FloorPlanPage() {
+  const router = useRouter()
+  const [user, setUser] = useState<User | null>(null)
+  const [rooms, setRooms] = useState<Room[]>([])
+  const [plan2dUrl, setPlan2dUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  const fetchHouseAndRooms = async () => {
+    const { data: auth } = await supabase.auth.getUser()
+    if (!auth.user) {
+      router.push('/login')
+      return
+    }
+    setUser(auth.user)
+
+    const { data: house } = await supabase
+      .from('houses')
+      .select('plan_2d_url')
+      .eq('user_id', auth.user.id)
+      .maybeSingle()
+
+    if (house?.plan_2d_url) {
+      setPlan2dUrl(house.plan_2d_url)
+    }
+
+    const { data: roomData } = await supabase
+      .from('rooms')
+      .select('id, name, floor_level, width_m, length_m, status, progress')
+      .order('created_at', { ascending: true })
+
+    if (roomData) {
+      setRooms(roomData)
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    fetchHouseAndRooms()
+  }, [router])
+
+  if (loading) {
+    return <div className="p-6 text-xs text-[#9C9A92]">Loading floor plan...</div>
+  }
+
+  return (
+    <div className="px-5 pt-4 pb-16 space-y-4 bg-[#151815] min-h-screen">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-[10px] uppercase tracking-widest font-semibold text-[#C6A467]">
+            Architectural Blueprint
+          </p>
+          <h1 className="text-lg font-semibold text-[#F2EFE9]">House Floor Plan</h1>
+        </div>
+      </div>
+
+      {user && (
+        <AIFloorPlan
+          userId={user.id}
+          rooms={rooms}
+      plan2dUrl={plan2dUrl}
+          onRoomsUpdated={fetchHouseAndRooms}
+        />
+      )}
+    </div>
+  )
+}
+
 ==> app/api/parse-floorplan/route.ts <==
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -1806,55 +2489,55 @@ function RoomDetailContent() {
     router.push('/')
   }
 
-  if (loading) return <div className="p-6 text-xs text-[#9C9A92]">Loading room...</div>
-  if (!room) return <div className="p-6 text-xs text-[#9C9A92]">Room not found.</div>
+  if (loading) return <div className="p-6 text-xs text-[#888]">Loading room...</div>
+  if (!room) return <div className="p-6 text-xs text-[#888]">Room not found.</div>
 
   const totalRoomSpent = posts.reduce((sum, p) => sum + (Number(p.cost) || 0), 0)
   const allSpecs = Array.from(new Set(posts.flatMap((p) => p.specs || [])))
 
   return (
-    <div className="px-5 pt-4 pb-12 space-y-5 bg-[#151815] min-h-screen">
+    <div className="px-5 pt-6 pb-16 space-y-5 bg-[#111111] min-h-screen max-w-2xl mx-auto">
       {/* Back Bar */}
       <div className="flex items-center justify-between">
-        <Link href="/" className="text-xs font-medium text-[#8FA680] hover:underline">
-          ← Back to House
+        <Link href="/profile" className="text-xs font-medium text-white hover:underline">
+          ← Back to Profile
         </Link>
         <button
           type="button"
           onClick={handleDeleteRoom}
-          className="text-[11px] text-[#7D7B73] hover:text-red-400"
+          className="text-[11px] text-[#777] hover:text-red-400"
         >
           Delete Room
         </button>
       </div>
 
       {/* Room Hero Card */}
-      <div className="rounded-2xl bg-gradient-to-br from-[#222B22] to-[#1B201B] border border-[#323E32] p-4 space-y-3.5">
+      <div className="rounded-2xl bg-[#181818] border border-[#262626] p-5 space-y-4 shadow-sm">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-[10px] uppercase tracking-widest font-semibold text-[#C6A467]">
+            <p className="text-[10px] uppercase tracking-widest font-semibold text-[#888]">
               {room.floor_level || 'Room Space'}
             </p>
-            <h1 className="text-xl font-semibold text-[#F2EFE9]">{room.name}</h1>
+            <h1 className="text-xl font-semibold text-white">{room.name}</h1>
             {room.width_m && room.length_m && (
-              <p className="text-xs text-[#9C9A92]">
+              <p className="text-xs text-[#888]">
                 Dimensions: {room.width_m}m × {room.length_m}m
               </p>
             )}
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-[#9C9A92]">Room Spend</p>
-            <p className="text-base font-semibold text-[#C6A467]">
+            <p className="text-[10px] text-[#888]">Room Spend</p>
+            <p className="text-base font-semibold text-white">
               £{totalRoomSpent.toLocaleString()}
             </p>
           </div>
         </div>
 
         {/* Interactive Progress & Status Controls */}
-        <div className="rounded-xl bg-[#141714] border border-[#2C352C] p-3.5 space-y-3">
+        <div className="rounded-xl bg-[#111] border border-[#262626] p-4 space-y-3">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-medium text-[#D5D2C8]">Completion Progress</span>
-            <span className="font-semibold text-[#8FA680]">{progress}%</span>
+            <span className="font-medium text-[#CCC]">Completion Progress</span>
+            <span className="font-semibold text-white">{progress}%</span>
           </div>
 
           <input
@@ -1869,14 +2552,14 @@ function RoomDetailContent() {
               if (val === 100) setStatus('Complete')
               else if (val > 0 && status === 'Planning') setStatus('In Progress')
             }}
-            className="w-full accent-[#8FA680]"
+            className="w-full accent-white"
           />
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="flex-1 px-3 py-2 text-xs bg-[#1E221E] text-[#F2EFE9] border border-[#323832] rounded-xl"
+              className="flex-1 px-3 py-2 text-xs bg-[#181818] text-white border border-[#262626] rounded-xl"
             >
               <option value="Planning">Planning</option>
               <option value="In Progress">In Progress</option>
@@ -1887,7 +2570,7 @@ function RoomDetailContent() {
               type="button"
               onClick={handleSaveRoomProgress}
               disabled={saving}
-              className="px-4 py-2 rounded-xl bg-[#8FA680] hover:bg-[#9FB690] text-[#121612] text-xs font-semibold transition-colors"
+              className="px-4 py-2 rounded-xl bg-white hover:bg-[#E0E0E0] text-black text-xs font-semibold transition-colors"
             >
               {saving ? 'Saving...' : 'Save Status'}
             </button>
@@ -1897,15 +2580,15 @@ function RoomDetailContent() {
 
       {/* Room Specs Summary */}
       {allSpecs.length > 0 && (
-        <div className="rounded-2xl bg-[#1E221E] border border-[#2E332E] p-4 space-y-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9C9A92]">
+        <div className="rounded-2xl bg-[#181818] border border-[#262626] p-4 space-y-2.5">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#888]">
             Materials & Paints Used Here
           </h2>
           <div className="flex flex-wrap gap-1.5">
             {allSpecs.map((spec, idx) => (
               <span
                 key={idx}
-                className="text-[11px] px-2.5 py-1 rounded-full bg-[#242E24] text-[#8FA680] font-medium"
+                className="text-[11px] px-3 py-1 rounded-full bg-[#222] text-[#CCC] font-medium"
               >
                 {spec}
               </span>
@@ -1915,22 +2598,22 @@ function RoomDetailContent() {
       )}
 
       {/* Room Posts & Photos */}
-      <div className="space-y-2.5">
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9C9A92]">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#888]">
             Room Logbook ({posts.length})
           </h2>
-          <Link href="/upload" className="text-xs font-medium text-[#8FA680] underline">
+          <Link href="/upload" className="text-xs font-medium text-white underline">
             + Add Update
           </Link>
         </div>
 
         {posts.length === 0 ? (
-          <div className="rounded-2xl bg-[#1E221E] border border-[#2E332E] p-6 text-center space-y-2">
-            <p className="text-xs text-[#9C9A92]">No milestones logged for {room.name} yet.</p>
+          <div className="rounded-2xl bg-[#181818] border border-[#262626] p-8 text-center space-y-2">
+            <p className="text-xs text-[#888]">No milestones logged for {room.name} yet.</p>
             <Link
               href="/upload"
-              className="inline-block px-4 py-1.5 rounded-full bg-[#8FA680] text-[#121612] text-xs font-semibold"
+              className="inline-block px-4 py-2 rounded-full bg-white text-black text-xs font-semibold"
             >
               + Log First Milestone
             </Link>
@@ -1940,7 +2623,7 @@ function RoomDetailContent() {
             {posts.map((post) => (
               <div
                 key={post.id}
-                className="rounded-2xl bg-[#1E221E] border border-[#2E332E] overflow-hidden"
+                className="rounded-2xl bg-[#181818] border border-[#262626] overflow-hidden shadow-sm"
               >
                 {post.image_url && (
                   <div className="bg-black">
@@ -1952,9 +2635,9 @@ function RoomDetailContent() {
                   </div>
                 )}
 
-                <div className="p-3.5 space-y-1.5">
-                  <div className="flex items-center justify-between text-[10px] text-[#9C9A92]">
-                    <span className="font-semibold text-[#8FA680]">{post.stage || 'Update'}</span>
+                <div className="p-4 space-y-2">
+                  <div className="flex items-center justify-between text-[10px] text-[#888]">
+                    <span className="font-semibold text-white">{post.stage || 'Update'}</span>
                     <span>
                       {new Date(post.created_at).toLocaleDateString('en-GB', {
                         day: 'numeric',
@@ -1962,14 +2645,14 @@ function RoomDetailContent() {
                         year: 'numeric',
                       })}
                       {post.cost ? (
-                        <span className="text-[#C6A467] font-semibold">
+                        <span className="text-white font-semibold">
                           {' '}
                           · £{Number(post.cost).toLocaleString()}
                         </span>
                       ) : null}
                     </span>
                   </div>
-                  {post.caption && <p className="text-xs text-[#F2EFE9] leading-relaxed">{post.caption}</p>}
+                  {post.caption && <p className="text-xs text-[#DDD] leading-relaxed">{post.caption}</p>}
                 </div>
               </div>
             ))}
@@ -1982,7 +2665,7 @@ function RoomDetailContent() {
 
 export default function RoomDetailPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-xs text-[#9C9A92]">Loading room...</div>}>
+    <Suspense fallback={<div className="p-6 text-xs text-[#888]">Loading room...</div>}>
       <RoomDetailContent />
     </Suspense>
   )
@@ -1992,459 +2675,307 @@ export default function RoomDetailPage() {
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 
-interface RoomItem {
+interface Room {
   id: string
   name: string
-  floor_level: string | null
-  status: string
-  progress: number
-  width_m?: number | null
-  length_m?: number | null
 }
 
-interface PostItem {
-  id: string
-  room_id: string | null
-  stage: string | null
-  caption: string | null
-  image_url: string | null
-  media_type: 'image' | 'video' | null
-  cost: number | null
-  created_at: string
-}
-
-export default function HouseDashboardPage() {
+export default function UploadMilestonePage() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
+  const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
 
-  const [houseTitle, setHouseTitle] = useState('My Home Renovation')
-  const [houseEra, setHouseEra] = useState('')
-  const [location, setLocation] = useState('')
-  const [plan2dUrl, setPlan2dUrl] = useState<string | null>(null)
+  const [postMode, setPostMode] = useState<'grid' | 'story'>('grid')
+  const [roomId, setRoomId] = useState('')
+  const [stage, setStage] = useState('Painting & Decorating')
+  const [caption, setCaption] = useState('')
+  
+  // Collapsible optional details toggle
+  const [showExtra, setShowExtra] = useState(false)
+  const [specsInput, setSpecsInput] = useState('')
+  const [cost, setCost] = useState('')
+  const [contractor, setContractor] = useState('')
 
-  const [rooms, setRooms] = useState<RoomItem[]>([])
-  const [allPosts, setAllPosts] = useState<PostItem[]>([])
-
-  // Add Room Modal State
-  const [showAddRoom, setShowAddRoom] = useState(false)
-  const [savingRoom, setSavingRoom] = useState(false)
-  const [newRoom, setNewRoom] = useState({
-    name: '',
-    floor_level: 'Ground Floor',
-    status: 'Planning',
-  })
-
-  const loadDashboard = async (userId: string) => {
-    const { data: house } = await supabase
-      .from('houses')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle()
-
-    if (house) {
-      if (house.title) setHouseTitle(house.title)
-      if (house.era) setHouseEra(house.era)
-      if (house.location) setLocation(house.location)
-      if (house.plan_2d_url) setPlan2dUrl(house.plan_2d_url)
-    }
-
-    const { data: roomData, error: roomErr } = await supabase
-      .from('rooms')
-      .select('id, name, floor_level, status, progress, width_m, length_m')
-      .order('created_at', { ascending: true })
-
-    if (roomErr) {
-      console.error('Error loading rooms:', roomErr.message)
-    } else if (roomData) {
-      setRooms(roomData)
-    }
-
-    const { data: postData } = await supabase
-      .from('posts')
-      .select('id, room_id, stage, caption, image_url, media_type, cost, created_at')
-      .eq('is_story', false)
-      .order('created_at', { ascending: false })
-
-    if (postData) setAllPosts(postData)
-  }
+  const [file, setFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   useEffect(() => {
     const init = async () => {
       const { data: auth } = await supabase.auth.getUser()
-      if (!auth.user) {
-        router.push('/login')
-        return
-      }
+      if (!auth.user) return router.push('/login')
       setUser(auth.user)
-      await loadDashboard(auth.user.id)
+
+      const { data: roomData } = await supabase
+        .from('rooms')
+        .select('id, name')
+        .order('created_at', { ascending: true })
+      if (roomData) {
+        setRooms(roomData)
+        if (roomData.length > 0) setRoomId(roomData[0].id)
+      }
       setLoading(false)
     }
     init()
   }, [router])
 
-  const handleCreateRoom = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!user || !newRoom.name.trim()) return
-    setSavingRoom(true)
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const chosen = e.target.files?.[0] || null
+    setFile(chosen)
+    if (chosen) {
+      setPreviewUrl(URL.createObjectURL(chosen))
+    } else {
+      setPreviewUrl(null)
+    }
+  }
 
-    const { error } = await supabase.from('rooms').insert([
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user) return
+    setSubmitting(true)
+
+    let uploadedUrl: string | null = null
+    let mediaType: 'image' | 'video' | null = null
+
+    if (file) {
+      const isVideo = file.type.startsWith('video/')
+      mediaType = isVideo ? 'video' : 'image'
+      const ext = file.name.split('.').pop() || (isVideo ? 'mp4' : 'jpg')
+      const filePath = `${user.id}/${Date.now()}.${ext}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('post-images')
+        .upload(filePath, file)
+
+      if (uploadError) {
+        setSubmitting(false)
+        alert('Upload failed: ' + uploadError.message)
+        return
+      }
+
+      const { data: pubData } = supabase.storage.from('post-images').getPublicUrl(filePath)
+      uploadedUrl = pubData.publicUrl
+    }
+
+    const parsedSpecs = specsInput
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+
+    const isStory = postMode === 'story'
+    const expiresAt = isStory ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() : null
+
+    const { error } = await supabase.from('posts').insert([
       {
         user_id: user.id,
-        name: newRoom.name.trim(),
-        floor_level: newRoom.floor_level,
-        status: newRoom.status,
-        progress: newRoom.status === 'Complete' ? 100 : newRoom.status === 'In Progress' ? 25 : 0,
+        room_id: roomId || null,
+        stage,
+        caption: caption.trim() || null,
+        image_url: uploadedUrl,
+        media_type: mediaType,
+        is_story: isStory,
+        expires_at: expiresAt,
+        specs: parsedSpecs,
+        cost: cost ? Number(cost) : null,
+        contractor: contractor.trim() || null,
       },
     ])
 
-    setSavingRoom(false)
+    setSubmitting(false)
     if (error) {
-      alert('Could not add room: ' + error.message)
+      alert('Could not save entry: ' + error.message)
       return
     }
 
-    setNewRoom({ name: '', floor_level: 'Ground Floor', status: 'Planning' })
-    setShowAddRoom(false)
-    await loadDashboard(user.id)
+    router.push(isStory ? '/profile' : '/')
   }
 
-  if (loading) {
-    return <div className="p-6 text-xs text-[#9C9A92]">Loading your house dashboard...</div>
-  }
-
-  const avgProgress =
-    rooms.length > 0 ? Math.round(rooms.reduce((sum, r) => sum + (r.progress || 0), 0) / rooms.length) : 0
-  const totalSpent = allPosts.reduce((sum, p) => sum + (Number(p.cost) || 0), 0)
-  const completedRooms = rooms.filter((r) => r.progress >= 100 || r.status === 'Complete').length
-  const recentPosts = allPosts.slice(0, 4)
-
-  const getRoomName = (roomId: string | null) => {
-    if (!roomId) return 'Whole House'
-    return rooms.find((r) => r.id === roomId)?.name || 'Room'
-  }
-
-  const getRoomSpent = (roomId: string) =>
-    allPosts
-      .filter((p) => p.room_id === roomId)
-      .reduce((sum, p) => sum + (Number(p.cost) || 0), 0)
+  if (loading) return <div className="p-6 text-xs text-[#9C9A92]">Loading...</div>
 
   return (
-    <div className="px-5 pt-4 pb-10 space-y-5 bg-[#151815] min-h-screen">
-      {/* 1. House Overview Hero Card */}
-      <div className="rounded-2xl bg-gradient-to-br from-[#222B22] to-[#1B201B] border border-[#323E32] p-4 space-y-3.5 shadow-lg shadow-black/20">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="text-[10px] uppercase tracking-widest font-semibold text-[#C6A467]">
-              House Passport
-            </p>
-            <h1 className="text-lg font-semibold text-[#F2EFE9] leading-snug">{houseTitle}</h1>
-            {(houseEra || location) && (
-              <p className="text-xs text-[#9C9A92]">
-                {[houseEra, location].filter(Boolean).join(' · ')}
-              </p>
-            )}
-          </div>
-          <Link
-            href="/settings"
-            className="text-[11px] font-medium px-2.5 py-1 rounded-full bg-[#272F27] hover:bg-[#323B32] text-[#F2EFE9] border border-[#394539] transition-colors"
-          >
-            Edit House
-          </Link>
-        </div>
-
-        {/* Overall Progress Bar */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-medium text-[#D5D2C8]">Overall Renovation</span>
-            <span className="font-semibold text-[#8FA680]">{avgProgress}% Complete</span>
-          </div>
-          <div className="w-full h-2.5 bg-[#121512] rounded-full overflow-hidden border border-[#2C352C]">
-            <div
-              className="h-full bg-gradient-to-r from-[#7A8F6D] to-[#9FB690] rounded-full transition-all duration-500"
-              style={{ width: `${Math.max(6, avgProgress)}%` }}
-            />
-          </div>
-        </div>
-
-        {/* 3 Key Metrics */}
-        <div className="grid grid-cols-3 gap-2 pt-1">
-          <div className="rounded-xl bg-[#151915]/90 p-2.5 border border-[#2D362D]">
-            <p className="text-[10px] text-[#9C9A92]">Rooms</p>
-            <p className="text-sm font-semibold text-[#F2EFE9]">
-              {completedRooms}/{rooms.length}{' '}
-              <span className="text-[10px] font-normal text-[#9C9A92]">done</span>
-            </p>
-          </div>
-          <div className="rounded-xl bg-[#151915]/90 p-2.5 border border-[#2D362D]">
-            <p className="text-[10px] text-[#9C9A92]">Total Spent</p>
-            <p className="text-sm font-semibold text-[#C6A467]">
-              £{totalSpent.toLocaleString()}
-            </p>
-          </div>
-          <div className="rounded-xl bg-[#151915]/90 p-2.5 border border-[#2D362D]">
-            <p className="text-[10px] text-[#9C9A92]">Milestones</p>
-            <p className="text-sm font-semibold text-[#F2EFE9]">{allPosts.length}</p>
-          </div>
-        </div>
+    <div className="px-5 pt-4 pb-12 space-y-4 bg-[#151815] min-h-screen">
+      <div>
+        <p className="text-[10px] uppercase tracking-widest font-semibold text-[#C6A467]">
+          Document Progress
+        </p>
+        <h1 className="text-lg font-semibold text-[#F2EFE9]">Log Renovation Milestone</h1>
       </div>
 
-      {/* 2. Quick Actions Row */}
-      <div className="grid grid-cols-2 gap-2.5">
-        <Link
-          href="/upload"
-          className="rounded-xl bg-[#8FA680] hover:bg-[#9FB690] text-[#121612] px-3.5 py-3 flex items-center justify-center gap-2 text-xs font-semibold shadow-sm transition-colors"
-        >
-          <span>+ Log Milestone</span>
-        </Link>
+      {/* Mode Switcher */}
+      <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-[#1E221E] border border-[#2E332E]">
         <button
           type="button"
-          onClick={() => setShowAddRoom(true)}
-          className="rounded-xl bg-[#1E221E] hover:bg-[#262B26] text-[#F2EFE9] border border-[#2F362F] px-3.5 py-3 flex items-center justify-center gap-1.5 text-xs font-semibold transition-colors"
+          onClick={() => setPostMode('grid')}
+          className={`py-2 text-xs font-semibold rounded-lg transition-colors ${
+            postMode === 'grid'
+              ? 'bg-[#8FA680] text-[#121612]'
+              : 'text-[#9C9A92] hover:text-[#F2EFE9]'
+          }`}
         >
-          <span>+ Add Room</span>
+          Logbook & Grid Post
+        </button>
+        <button
+          type="button"
+          onClick={() => setPostMode('story')}
+          className={`py-2 text-xs font-semibold rounded-lg transition-colors ${
+            postMode === 'story'
+              ? 'bg-[#C6A467] text-[#121612]'
+              : 'text-[#9C9A92] hover:text-[#F2EFE9]'
+          }`}
+        >
+          24h Quick Story
         </button>
       </div>
 
-      {/* 3. Floor Plan Quick Banner (If Not Uploaded Yet) */}
-      {!plan2dUrl && (
-        <Link
-          href="/settings"
-          className="block rounded-2xl bg-[#1B201B] border border-dashed border-[#495B42] p-4 space-y-1 hover:bg-[#212721] transition-colors"
-        >
-          <p className="text-xs font-semibold text-[#8FA680]">✨ Generate Your 2D Floor Plan</p>
-          <p className="text-[11px] text-[#9C9A92] leading-relaxed">
-            Upload an estate agent plan or sketch in Settings to build your architectural blueprint and auto-populate rooms.
-          </p>
-        </Link>
-      )}
-
-      {/* 4. Rooms & Spaces Grid */}
-      <div className="space-y-2.5">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9C9A92]">
-            Rooms & Spaces ({rooms.length})
-          </h2>
-          <button
-            type="button"
-            onClick={() => setShowAddRoom(true)}
-            className="text-xs font-medium text-[#8FA680] hover:text-[#A8BF99] underline"
-          >
-            + New Room
-          </button>
-        </div>
-
-        {rooms.length === 0 ? (
-          <div className="rounded-2xl bg-[#1E221E] border border-[#2E332E] p-6 text-center space-y-2">
-            <p className="text-xs font-medium text-[#F2EFE9]">No rooms added yet</p>
-            <p className="text-[11px] text-[#9C9A92]">
-              Add your rooms manually or upload a floor plan in Settings to generate them automatically.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-2.5">
-            {rooms.map((room) => {
-              const roomSpent = getRoomSpent(room.id)
-              return (
-                <Link
-                  key={room.id}
-                  href={`/rooms/${room.id}`}
-                  className="rounded-2xl bg-[#1E221E] border border-[#2E332E] hover:border-[#8FA680] p-3.5 space-y-2.5 transition-colors flex flex-col justify-between"
-                >
-                  <div className="space-y-0.5">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-[10px] font-medium text-[#9C9A92] truncate">
-                        {room.floor_level || 'Room'}
-                      </span>
-                      <span className="text-[10px] font-semibold text-[#8FA680] shrink-0">
-                        {room.progress}%
-                      </span>
-                    </div>
-                    <h3 className="text-sm font-semibold text-[#F2EFE9] truncate">{room.name}</h3>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="w-full h-1.5 bg-[#121512] rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#8FA680] rounded-full"
-                        style={{ width: `${Math.max(5, room.progress)}%` }}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between text-[10px] text-[#9C9A92]">
-                      <span>{room.status}</span>
-                      {roomSpent > 0 ? (
-                        <span className="text-[#C6A467] font-medium">
-                          £{roomSpent.toLocaleString()}
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* 5. Recent Milestones Strip */}
-      <div className="space-y-2.5">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9C9A92]">
-            Recent Milestones
-          </h2>
-          <Link href="/timeline" className="text-xs font-medium text-[#8FA680] hover:text-[#A8BF99] underline">
-            Full Logbook →
-          </Link>
-        </div>
-
-        {recentPosts.length === 0 ? (
-          <div className="rounded-2xl bg-[#1E221E] border border-[#2E332E] p-5 text-center space-y-2">
-            <p className="text-xs text-[#9C9A92]">Your renovation logbook is empty.</p>
-            <Link
-              href="/upload"
-              className="inline-block px-4 py-1.5 rounded-full bg-[#8FA680] text-[#121612] text-xs font-semibold"
-            >
-              Post First Update
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {recentPosts.map((post) => (
-              <Link
-                key={post.id}
-                href="/timeline"
-                className="flex items-center gap-3 rounded-2xl bg-[#1E221E] border border-[#2E332E] p-2.5 hover:border-[#8FA680] transition-colors"
-              >
-                {post.image_url ? (
-                  post.media_type === 'video' ? (
-                    <video
-                      src={post.image_url}
-                      muted
-                      playsInline
-                      className="w-14 h-14 rounded-xl object-cover bg-[#121512] shrink-0"
-                    />
-                  ) : (
-                    <img
-                      src={post.image_url}
-                      alt=""
-                      className="w-14 h-14 rounded-xl object-cover bg-[#121512] shrink-0"
-                    />
-                  )
-                ) : (
-                  <div className="w-14 h-14 rounded-xl bg-[#252D25] text-[#8FA680] flex items-center justify-center text-xs font-semibold shrink-0">
-                    Log
-                  </div>
-                )}
-
-                <div className="min-w-0 flex-1 space-y-0.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8FA680]">
-                      {getRoomName(post.room_id)}
-                    </span>
-                    {post.stage && (
-                      <span className="text-[10px] text-[#7D7B73]">· {post.stage}</span>
-                    )}
-                  </div>
-                  <p className="text-xs font-medium text-[#F2EFE9] line-clamp-1">
-                    {post.caption || 'Renovation milestone logged'}
-                  </p>
-                  <p className="text-[10px] text-[#9C9A92]">
-                    {new Date(post.created_at).toLocaleDateString('en-GB', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
-                    {post.cost ? (
-                      <span className="text-[#C6A467]"> · £{Number(post.cost).toLocaleString()}</span>
-                    ) : (
-                      ''
-                    )}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Add Room Modal */}
-      {showAddRoom && (
-        <div
-          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
-          onClick={() => setShowAddRoom(false)}
-        >
-          <div
-            className="w-full max-w-sm rounded-2xl bg-[#1E221E] border border-[#343B34] p-5 space-y-3.5 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-[#F2EFE9]">Add a Room or Space</h2>
-              <button
-                type="button"
-                onClick={() => setShowAddRoom(false)}
-                className="text-[#9C9A92] hover:text-white text-lg"
-              >
-                ×
-              </button>
+      <form onSubmit={handleSubmit} className="space-y-3.5">
+        {/* Photo / Video Upload Box */}
+        <label className="block cursor-pointer rounded-2xl bg-[#1E221E] border border-dashed border-[#495B42] hover:border-[#8FA680] p-4 text-center space-y-2 transition-colors">
+          {previewUrl ? (
+            file?.type.startsWith('video/') ? (
+              <video src={previewUrl} controls className="w-full max-h-64 rounded-xl mx-auto" />
+            ) : (
+              <img src={previewUrl} alt="Preview" className="w-full max-h-64 object-cover rounded-xl mx-auto" />
+            )
+          ) : (
+            <div className="py-6 space-y-1">
+              <p className="text-xs font-semibold text-[#8FA680]">+ Tap to Add Photo or Video</p>
+              <p className="text-[11px] text-[#9C9A92]">
+                Before & after shots, plastering progress, paint swatches, or receipts
+              </p>
             </div>
+          )}
+          <input
+            type="file"
+            accept="image/*,video/*"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+        </label>
 
-            <form onSubmit={handleCreateRoom} className="space-y-3">
-              <div>
-                <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">Room Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g., Kitchen-Diner, Main Bathroom, Rear Garden"
-                  value={newRoom.name}
-                  onChange={(e) => setNewRoom({ ...newRoom, name: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl focus:outline-none focus:border-[#8FA680]"
-                />
-              </div>
+        {/* Room & Stage */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <div>
+            <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">Room / Space</label>
+            <select
+              value={roomId}
+              onChange={(e) => setRoomId(e.target.value)}
+              className="w-full px-3 py-2.5 text-xs bg-[#1E221E] text-[#F2EFE9] border border-[#2E332E] rounded-xl focus:outline-none focus:border-[#8FA680]"
+            >
+              <option value="">Whole House</option>
+              {rooms.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">Floor / Zone</label>
-                  <select
-                    value={newRoom.floor_level}
-                    onChange={(e) => setNewRoom({ ...newRoom, floor_level: e.target.value })}
-                    className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] border border-[#323832] rounded-xl focus:outline-none focus:border-[#8FA680]"
-                  >
-                    <option value="Ground Floor">Ground Floor</option>
-                    <option value="First Floor">First Floor</option>
-                    <option value="Loft / Attic">Loft / Attic</option>
-                    <option value="Exterior / Garden">Exterior / Garden</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">Stage</label>
-                  <select
-                    value={newRoom.status}
-                    onChange={(e) => setNewRoom({ ...newRoom, status: e.target.value })}
-                    className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] border border-[#323832] rounded-xl focus:outline-none focus:border-[#8FA680]"
-                  >
-                    <option value="Planning">Planning</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Complete">Complete</option>
-                  </select>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={savingRoom}
-                className="w-full py-2.5 bg-[#8FA680] hover:bg-[#9FB690] text-[#121612] text-xs font-semibold rounded-xl transition-colors"
-              >
-                {savingRoom ? 'Adding...' : 'Create Room'}
-              </button>
-            </form>
+          <div>
+            <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">Renovation Stage</label>
+            <select
+              value={stage}
+              onChange={(e) => setStage(e.target.value)}
+              className="w-full px-3 py-2.5 text-xs bg-[#1E221E] text-[#F2EFE9] border border-[#2E332E] rounded-xl focus:outline-none focus:border-[#8FA680]"
+            >
+              <option value="Planning & Design">Planning & Design</option>
+              <option value="Stripping Out">Stripping Out</option>
+              <option value="First Fix & Structural">First Fix & Structural</option>
+              <option value="Plastering & Prep">Plastering & Prep</option>
+              <option value="Second Fix & Flooring">Second Fix & Flooring</option>
+              <option value="Painting & Decorating">Painting & Decorating</option>
+              <option value="Furnishing & Styling">Furnishing & Styling</option>
+            </select>
           </div>
         </div>
-      )}
+
+        {/* Caption */}
+        <div>
+          <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">Notes / Caption</label>
+          <textarea
+            rows={3}
+            placeholder="What was completed today? Any lessons learned or supplier notes..."
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+            className="w-full px-3.5 py-2.5 text-xs bg-[#1E221E] text-[#F2EFE9] placeholder-[#6B6962] border border-[#2E332E] rounded-xl resize-none focus:outline-none focus:border-[#8FA680]"
+          />
+        </div>
+
+        {/* Collapsible Optional Details Toggle */}
+        {postMode === 'grid' && (
+          <div className="space-y-3 pt-1">
+            <button
+              type="button"
+              onClick={() => setShowExtra(!showExtra)}
+              className="text-xs font-semibold text-[#8FA680] hover:underline flex items-center gap-1.5"
+            >
+              <span>{showExtra ? '▾ Hide Additional Specs, Cost & Contractor' : '▸ Add Materials, Cost & Contractor (Optional)'}</span>
+            </button>
+
+            {showExtra && (
+              <div className="space-y-3 p-3.5 rounded-2xl bg-[#1E221E] border border-[#2E332E]">
+                <div>
+                  <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">
+                    Materials, Paints & Specs (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Farrow & Ball Ammonite, Oak Herringbone"
+                    value={specsInput}
+                    onChange={(e) => setSpecsInput(e.target.value)}
+                    className="w-full px-3.5 py-2.5 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl focus:outline-none focus:border-[#8FA680]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">
+                      Cost (£ optional)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="e.g., 240"
+                      value={cost}
+                      onChange={(e) => setCost(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl focus:outline-none focus:border-[#8FA680]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">
+                      Done By (optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g., DIY, Electrician"
+                      value={contractor}
+                      onChange={(e) => setContractor(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl focus:outline-none focus:border-[#8FA680]"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full py-3 rounded-xl bg-[#8FA680] hover:bg-[#9FB690] text-[#121612] text-xs font-semibold shadow-sm transition-colors"
+        >
+          {submitting
+            ? 'Saving...'
+            : postMode === 'story'
+            ? 'Post 24h Story'
+            : 'Save to House Passport'}
+        </button>
+      </form>
     </div>
   )
 }
@@ -2597,46 +3128,46 @@ export default function TimelinePage() {
 
   const filteredSpend = filteredPosts.reduce((sum, p) => sum + (Number(p.cost) || 0), 0)
 
-  if (loading) return <div className="p-6 text-xs text-[#9C9A92]">Loading renovation logbook...</div>
+  if (loading) return <div className="p-6 text-xs text-[#888]">Loading renovation logbook...</div>
 
   return (
-    <div className="px-5 pt-4 pb-12 space-y-4 bg-[#151815] min-h-screen">
+    <div className="px-5 pt-6 pb-16 space-y-4 bg-[#111111] min-h-screen max-w-2xl mx-auto">
       {/* Header & Summary */}
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-[10px] uppercase tracking-widest font-semibold text-[#C6A467]">
+          <p className="text-[10px] uppercase tracking-widest font-semibold text-[#888]">
             House Passport Archive
           </p>
-          <h1 className="text-lg font-semibold text-[#F2EFE9]">Build Logbook</h1>
-          <p className="text-xs text-[#9C9A92]">
+          <h1 className="text-lg font-semibold text-white">Build Logbook</h1>
+          <p className="text-xs text-[#888]">
             {filteredPosts.length} entries ·{' '}
-            <span className="text-[#C6A467] font-medium">£{filteredSpend.toLocaleString()}</span> logged
+            <span className="text-white font-medium">£{filteredSpend.toLocaleString()}</span> logged
           </p>
         </div>
 
         <Link
           href="/upload"
-          className="px-3.5 py-2 rounded-full bg-[#8FA680] hover:bg-[#9FB690] text-[#121612] text-xs font-semibold transition-colors"
+          className="px-4 py-2 rounded-full bg-white hover:bg-[#E0E0E0] text-black text-xs font-semibold transition-colors shadow-sm"
         >
           + Log Entry
         </Link>
       </div>
 
       {/* Search & Controls */}
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         <input
           type="text"
           placeholder="Search captions, paints, trades, rooms..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full px-3.5 py-2.5 text-xs bg-[#1E221E] text-[#F2EFE9] placeholder-[#6B6962] border border-[#2E332E] rounded-xl focus:outline-none focus:border-[#8FA680]"
+          className="w-full px-4 py-3 text-xs bg-[#181818] text-white placeholder-[#666] border border-[#262626] rounded-xl focus:outline-none focus:border-white"
         />
 
         <div className="flex items-center gap-2">
           <select
             value={selectedRoomId}
             onChange={(e) => setSelectedRoomId(e.target.value)}
-            className="flex-1 px-3 py-2 text-xs bg-[#1E221E] text-[#F2EFE9] border border-[#2E332E] rounded-xl focus:outline-none focus:border-[#8FA680]"
+            className="flex-1 px-3.5 py-2.5 text-xs bg-[#181818] text-white border border-[#262626] rounded-xl focus:outline-none focus:border-white"
           >
             <option value="all">All Rooms ({posts.length})</option>
             {rooms.map((r) => (
@@ -2649,7 +3180,7 @@ export default function TimelinePage() {
           <button
             type="button"
             onClick={() => setSortOrder(sortOrder === 'newest' ? 'oldest' : 'newest')}
-            className="px-3 py-2 text-xs bg-[#1E221E] text-[#C5C2B8] border border-[#2E332E] rounded-xl hover:border-[#8FA680]"
+            className="px-3.5 py-2.5 text-xs bg-[#181818] text-[#CCC] border border-[#262626] rounded-xl hover:border-white"
           >
             {sortOrder === 'newest' ? '↓ Newest' : '↑ Oldest'}
           </button>
@@ -2658,46 +3189,46 @@ export default function TimelinePage() {
 
       {/* Vertical Timeline Feed */}
       {filteredPosts.length === 0 ? (
-        <div className="rounded-2xl bg-[#1E221E] border border-[#2E332E] p-8 text-center space-y-2">
-          <p className="text-xs text-[#9C9A92]">No matching renovation logs found.</p>
+        <div className="rounded-2xl bg-[#181818] border border-[#262626] p-8 text-center space-y-2">
+          <p className="text-xs text-[#888]">No matching renovation logs found.</p>
           <Link
             href="/upload"
-            className="inline-block px-4 py-2 rounded-full bg-[#8FA680] text-[#121612] text-xs font-semibold"
+            className="inline-block px-4 py-2 rounded-full bg-white text-black text-xs font-semibold"
           >
             + Add Milestone
           </Link>
         </div>
       ) : (
-        <div className="relative pl-5 border-l-2 border-[#2D382D] space-y-5 ml-1.5">
+        <div className="relative pl-5 border-l-2 border-[#262626] space-y-5 ml-1.5">
           {filteredPosts.map((post) => (
             <div key={post.id} className="relative">
               {/* Timeline Node Dot */}
-              <span className="absolute -left-[25px] top-1.5 w-3 h-3 rounded-full bg-[#8FA680] ring-4 ring-[#151815]" />
+              <span className="absolute -left-[25px] top-1.5 w-3 h-3 rounded-full bg-white ring-4 ring-[#111]" />
 
-              <div className="rounded-2xl bg-[#1E221E] border border-[#2E332E] overflow-hidden">
+              <div className="rounded-2xl bg-[#181818] border border-[#262626] overflow-hidden shadow-sm">
                 {/* Card Top Meta */}
-                <div className="px-3.5 py-2.5 flex items-center justify-between border-b border-[#282E28]">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-[#253025] text-[#8FA680]">
+                <div className="px-4 py-3 flex items-center justify-between border-b border-[#222]">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded bg-[#222] text-[#CCC]">
                       {getRoomName(post.room_id)}
                     </span>
                     {post.stage && (
-                      <span className="text-[11px] font-medium text-[#C5C2B8]">{post.stage}</span>
+                      <span className="text-[11px] font-medium text-[#AAA]">{post.stage}</span>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2.5 text-[11px]">
+                  <div className="flex items-center gap-3 text-[11px]">
                     <button
                       type="button"
                       onClick={() => openEditModal(post)}
-                      className="text-[#8FA680] hover:underline font-medium"
+                      className="text-white hover:underline font-medium"
                     >
                       Edit
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDeletePost(post.id)}
-                      className="text-[#7D7B73] hover:text-red-400"
+                      className="text-[#777] hover:text-red-400"
                     >
                       Delete
                     </button>
@@ -2725,9 +3256,9 @@ export default function TimelinePage() {
                 )}
 
                 {/* Details */}
-                <div className="p-3.5 space-y-2">
+                <div className="p-4 space-y-2.5">
                   {post.caption && (
-                    <p className="text-xs text-[#F2EFE9] leading-relaxed">{post.caption}</p>
+                    <p className="text-xs text-white leading-relaxed">{post.caption}</p>
                   )}
 
                   {post.specs && post.specs.length > 0 && (
@@ -2735,7 +3266,7 @@ export default function TimelinePage() {
                       {post.specs.map((spec, idx) => (
                         <span
                           key={idx}
-                          className="text-[10px] px-2 py-0.5 rounded bg-[#141714] border border-[#2C332C] text-[#C5C2B8]"
+                          className="text-[10px] px-2.5 py-1 rounded-full bg-[#111] border border-[#262626] text-[#CCC]"
                         >
                           {spec}
                         </span>
@@ -2743,7 +3274,7 @@ export default function TimelinePage() {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between pt-1 text-[10px] text-[#9C9A92]">
+                  <div className="flex items-center justify-between pt-1 text-[10px] text-[#888]">
                     <span>
                       {new Date(post.created_at).toLocaleDateString('en-GB', {
                         day: 'numeric',
@@ -2754,7 +3285,7 @@ export default function TimelinePage() {
                     </span>
 
                     {post.cost !== null && post.cost !== undefined && (
-                      <span className="font-semibold text-[#C6A467]">
+                      <span className="font-semibold text-white">
                         £{Number(post.cost).toLocaleString()}
                       </span>
                     )}
@@ -2769,32 +3300,32 @@ export default function TimelinePage() {
       {/* Edit Post Modal */}
       {editingPost && (
         <div
-          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
           onClick={() => setEditingPost(null)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl bg-[#1E221E] border border-[#343B34] p-5 space-y-3 shadow-2xl"
+            className="w-full max-w-sm rounded-2xl bg-[#181818] border border-[#333] p-5 space-y-3.5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-[#F2EFE9]">Edit Logbook Entry</h2>
+              <h2 className="text-base font-semibold text-white">Edit Logbook Entry</h2>
               <button
                 type="button"
                 onClick={() => setEditingPost(null)}
-                className="text-[#9C9A92] text-lg"
+                className="text-[#888] text-lg"
               >
                 ×
               </button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="space-y-2.5">
-              <div className="grid grid-cols-2 gap-2">
+            <form onSubmit={handleSaveEdit} className="space-y-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-[10px] text-[#9C9A92] mb-1">Room</label>
+                  <label className="block text-[10px] text-[#888] mb-1">Room</label>
                   <select
                     value={editRoomId}
                     onChange={(e) => setEditRoomId(e.target.value)}
-                    className="w-full px-2.5 py-2 text-xs bg-[#141714] text-[#F2EFE9] border border-[#323832] rounded-xl"
+                    className="w-full px-3 py-2 text-xs bg-[#111] text-white border border-[#262626] rounded-xl"
                   >
                     <option value="">Whole House</option>
                     {rooms.map((r) => (
@@ -2806,11 +3337,11 @@ export default function TimelinePage() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] text-[#9C9A92] mb-1">Stage</label>
+                  <label className="block text-[10px] text-[#888] mb-1">Stage</label>
                   <select
                     value={editStage}
                     onChange={(e) => setEditStage(e.target.value)}
-                    className="w-full px-2.5 py-2 text-xs bg-[#141714] text-[#F2EFE9] border border-[#323832] rounded-xl"
+                    className="w-full px-3 py-2 text-xs bg-[#111] text-white border border-[#262626] rounded-xl"
                   >
                     <option value="Planning & Design">Planning & Design</option>
                     <option value="Stripping Out">Stripping Out</option>
@@ -2824,45 +3355,45 @@ export default function TimelinePage() {
               </div>
 
               <div>
-                <label className="block text-[10px] text-[#9C9A92] mb-1">Caption / Notes</label>
+                <label className="block text-[10px] text-[#888] mb-1">Caption / Notes</label>
                 <textarea
                   rows={3}
                   value={editCaption}
                   onChange={(e) => setEditCaption(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] border border-[#323832] rounded-xl resize-none"
+                  className="w-full px-3 py-2 text-xs bg-[#111] text-white border border-[#262626] rounded-xl resize-none"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] text-[#9C9A92] mb-1">
+                <label className="block text-[10px] text-[#888] mb-1">
                   Materials / Paint Specs (comma-separated)
                 </label>
                 <input
                   type="text"
                   value={editSpecs}
                   onChange={(e) => setEditSpecs(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] border border-[#323832] rounded-xl"
+                  className="w-full px-3 py-2 text-xs bg-[#111] text-white border border-[#262626] rounded-xl"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-[10px] text-[#9C9A92] mb-1">Cost (£)</label>
+                  <label className="block text-[10px] text-[#888] mb-1">Cost (£)</label>
                   <input
                     type="number"
                     step="0.01"
                     value={editCost}
                     onChange={(e) => setEditCost(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] border border-[#323832] rounded-xl"
+                    className="w-full px-3 py-2 text-xs bg-[#111] text-white border border-[#262626] rounded-xl"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] text-[#9C9A92] mb-1">Contractor / DIY</label>
+                  <label className="block text-[10px] text-[#888] mb-1">Contractor / DIY</label>
                   <input
                     type="text"
                     value={editContractor}
                     onChange={(e) => setEditContractor(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] border border-[#323832] rounded-xl"
+                    className="w-full px-3 py-2 text-xs bg-[#111] text-white border border-[#262626] rounded-xl"
                   />
                 </div>
               </div>
@@ -2870,7 +3401,7 @@ export default function TimelinePage() {
               <button
                 type="submit"
                 disabled={savingEdit}
-                className="w-full py-2.5 bg-[#8FA680] text-[#121612] text-xs font-semibold rounded-xl"
+                className="w-full py-3 bg-white text-black text-xs font-semibold rounded-xl hover:bg-[#E0E0E0]"
               >
                 {savingEdit ? 'Saving...' : 'Save Changes'}
               </button>
@@ -2889,16 +3420,154 @@ body {
   width: 100%;
   margin: 0;
   padding: 0;
-  background-color: #F4F2ED;
+  background-color: #111111;
+  color: #EDEDED;
+}
+
+@keyframes rgbGlow {
+  0% { filter: hue-rotate(0deg); }
+  50% { filter: hue-rotate(180deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+.animate-rgb {
+  animation: rgbGlow 6s linear infinite;
 }
 ==> app/notifications/page.tsx <==
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+import type { User } from '@supabase/supabase-js'
+
+interface NotificationItem {
+  id: string
+  type: 'like' | 'comment' | 'follow' | 'accept_follow'
+  actor_handle: string
+  actor_avatar?: string
+  content_preview?: string
+  created_at: string
+}
+
 export default function NotificationsPage() {
+  const router = useRouter()
+  const [user, setUser] = useState<User | null>(null)
+  const [notifications, setNotifications] = useState<NotificationItem[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const initNotifications = async () => {
+      const { data: auth } = await supabase.auth.getUser()
+      if (!auth.user) return router.push('/login')
+      setUser(auth.user)
+
+      // Fetch actual followers to generate real "new follower" notifications
+      const { data: followers } = await supabase
+        .from('follows')
+        .select('follower_id, created_at')
+        .eq('following_id', auth.user.id)
+        .order('created_at', { ascending: false })
+
+      const followerNotifs: NotificationItem[] = (followers || []).map((f, i) => ({
+        id: `follow-${f.follower_id}-${i}`,
+        type: 'follow',
+        actor_handle: 'homeowner_' + f.follower_id.slice(0, 5),
+        created_at: f.created_at,
+      }))
+
+      // Curated / demo social activity items to ensure the activity feed feels lively
+      const demoNotifs: NotificationItem[] = [
+        {
+          id: 'n-1',
+          type: 'like',
+          actor_handle: 'sarah_reno',
+          content_preview: 'liked your post about 1930s hallway panelling',
+          created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
+        },
+        {
+          id: 'n-2',
+          type: 'comment',
+          actor_handle: 'victorian_renovator',
+          content_preview: 'commented: "Looks so crisp! What paint finish is that?"',
+          created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
+        },
+        {
+          id: 'n-3',
+          type: 'accept_follow',
+          actor_handle: 'pandy_builds',
+          content_preview: 'accepted your follow request.',
+          created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
+        },
+      ]
+
+      setNotifications([...followerNotifs, ...demoNotifs])
+      setLoading(false)
+    }
+
+    initNotifications()
+  }, [router])
+
+  if (loading) return <div className="p-6 text-xs text-[#888]">Loading activity...</div>
+
   return (
-    <div className="p-6 space-y-4">
-      <h1 className="text-xl font-semibold text-stone-900">Notifications</h1>
-      <div className="p-6 rounded-2xl bg-[#EAE6DF] border border-[#DCD6CA] text-center text-xs text-stone-600">
-        No new notifications yet. Milestone reminders and property updates will appear here.
+    <div className="px-5 pt-6 pb-20 space-y-4 bg-[#111111] min-h-screen max-w-xl mx-auto font-sans">
+      <div className="space-y-1 border-b border-[#222] pb-3">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#888]">
+          Activity
+        </p>
+        <h1 className="text-lg font-bold text-white">Notifications</h1>
       </div>
+
+      {notifications.length === 0 ? (
+        <div className="p-10 rounded-2xl bg-[#181818] border border-[#262626] text-center space-y-2">
+          <p className="text-xs text-[#888]">No activity yet. When builders follow you or interact with your posts, it will show up here.</p>
+        </div>
+      ) : (
+        <div className="space-y-2.5">
+          {notifications.map((notif) => {
+            let icon = '💬'
+            if (notif.type === 'like') icon = '❤️'
+            if (notif.type === 'follow') icon = '👤'
+            if (notif.type === 'accept_follow') icon = '✨'
+
+            return (
+              <div
+                key={notif.id}
+                className="p-4 rounded-2xl bg-[#181818] border border-[#262626] flex items-center justify-between gap-3 shadow-sm hover:border-[#333] transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-[#222] border border-[#333] text-white flex items-center justify-center text-sm shrink-0">
+                    {icon}
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="text-xs text-white leading-snug">
+                      <strong className="font-bold">@{notif.actor_handle}</strong>{' '}
+                      <span className="text-[#CCC]">
+                        {notif.type === 'follow' && 'started following your house passport.'}
+                        {notif.type === 'like' && notif.content_preview}
+                        {notif.type === 'comment' && notif.content_preview}
+                        {notif.type === 'accept_follow' && notif.content_preview}
+                      </span>
+                    </p>
+                    <p className="text-[10px] text-[#777]">Recent activity</p>
+                  </div>
+                </div>
+
+                {notif.type === 'follow' && (
+                  <Link
+                    href="/profile"
+                    className="px-3.5 py-1.5 rounded-full bg-white text-black text-xs font-semibold shrink-0"
+                  >
+                    View
+                  </Link>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
@@ -3004,7 +3673,7 @@ export default function LoginPage() {
 ==> app/upload/page.tsx <==
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
@@ -3021,16 +3690,43 @@ export default function UploadMilestonePage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
 
-  const [postMode, setPostMode] = useState<'grid' | 'story'>('grid')
+  const [postMode, setPostMode] = useState<'grid' | 'story'>('story') // Default to story or toggle
   const [roomId, setRoomId] = useState('')
-  const [stage, setStage] = useState('Painting & Decorating')
   const [caption, setCaption] = useState('')
+  
+  // Grid-specific optional details
+  const [showExtra, setShowExtra] = useState(false)
+  const [stage, setStage] = useState('')
   const [specsInput, setSpecsInput] = useState('')
   const [cost, setCost] = useState('')
   const [contractor, setContractor] = useState('')
 
+  // Story-specific Creative State
+  const [storyText, setStoryText] = useState('')
+  const [selectedFilter, setSelectedFilter] = useState<'normal' | 'mono' | 'warm' | 'cool' | 'dramatic'>('normal')
+  const [selectedGif, setSelectedGif] = useState<string | null>(null)
+  const [selectedAudio, setSelectedAudio] = useState<string | null>(null)
+  const [showGifPicker, setShowGifPicker] = useState(false)
+  const [showAudioPicker, setShowAudioPicker] = useState(false)
+
+  // Framing, Aspect Ratio, Zoom & Pan State
+  const [aspectRatio, setAspectRatio] = useState<'square' | 'portrait' | 'landscape'>('portrait')
+  const [zoomLevel, setZoomLevel] = useState<number>(1)
+  const [position, setPosition] = useState({ x: 0, y: 0 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const containerRef = useRef<HTMLDivElement>(null)
+
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+  // Room modal state for grid mode
+  const [showNewRoomModal, setShowNewRoomModal] = useState(false)
+  const [newRoomNameInput, setNewRoomNameInput] = useState('')
+  const [creatingRoom, setCreatingRoom] = useState(false)
+
+  const popularGifs = ['✨ Renovating', '🔨 Hard Work', '☕ Coffee Break', '🏡 Home Sweet Home', '🎨 Fresh Paint']
+  const popularAudio = ['🎵 Chill Acoustic - LoFi', '🎶 Upbeat Indie Renovation', '🎧 Ambient House Vibes', '🎸 Classic Rock Build']
 
   useEffect(() => {
     const init = async () => {
@@ -3056,10 +3752,89 @@ export default function UploadMilestonePage() {
     setFile(chosen)
     if (chosen) {
       setPreviewUrl(URL.createObjectURL(chosen))
+      setZoomLevel(1)
+      setPosition({ x: 0, y: 0 })
     } else {
       setPreviewUrl(null)
     }
   }
+
+  const handleRoomChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value
+    if (val === 'NEW_ROOM') {
+      setShowNewRoomModal(true)
+    } else {
+      setRoomId(val)
+    }
+  }
+
+  const handleCreateNewRoom = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newRoomNameInput.trim() || !user) return
+    setCreatingRoom(true)
+
+    const { data: createdRoom, error: err } = await supabase
+      .from('rooms')
+      .insert([{ user_id: user.id, name: newRoomNameInput.trim() }])
+      .select('id, name')
+      .single()
+
+    setCreatingRoom(false)
+    if (createdRoom) {
+      setRooms([...rooms, createdRoom])
+      setRoomId(createdRoom.id)
+      setNewRoomNameInput('')
+      setShowNewRoomModal(false)
+    } else if (err) {
+      alert('Could not create room: ' + err.message)
+    }
+  }
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    setIsDragging(true)
+    setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y })
+    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+  }
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDragging || !containerRef.current) return
+
+    const rect = containerRef.current.getBoundingClientRect()
+    const maxX = (rect.width * (zoomLevel - 1)) / 2
+    const maxY = (rect.height * (zoomLevel - 1)) / 2
+
+    const rawX = e.clientX - dragStart.x
+    const rawY = e.clientY - dragStart.y
+
+    const clampedX = Math.max(-maxX, Math.min(maxX, rawX))
+    const clampedY = Math.max(-maxY, Math.min(maxY, rawY))
+
+    setPosition({ x: clampedX, y: clampedY })
+  }
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    setIsDragging(false)
+    try {
+      ;(e.target as HTMLElement).releasePointerCapture(e.pointerId)
+    } catch {}
+  }
+
+  const handleZoomChange = (newZoom: number) => {
+    setZoomLevel(newZoom)
+    if (newZoom === 1) setPosition({ x: 0, y: 0 })
+  }
+
+  // CSS Filter Class Mapping
+  const filterClass =
+    selectedFilter === 'mono'
+      ? 'grayscale contrast-125'
+      : selectedFilter === 'warm'
+      ? 'sepia-[0.3] brightness-105'
+      : selectedFilter === 'cool'
+      ? 'hue-rotate-15 contrast-105'
+      : selectedFilter === 'dramatic'
+      ? 'contrast-150 brightness-90'
+      : ''
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -3089,27 +3864,33 @@ export default function UploadMilestonePage() {
       uploadedUrl = pubData.publicUrl
     }
 
-    const parsedSpecs = specsInput
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-
     const isStory = postMode === 'story'
     const expiresAt = isStory ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() : null
+
+    // For stories, store storyText, filter, gif, and audio in specs or extra columns
+    const storySpecs = isStory
+      ? [
+          selectedFilter !== 'normal' ? `filter:${selectedFilter}` : '',
+          selectedGif ? `gif:${selectedGif}` : '',
+          selectedAudio ? `audio:${selectedAudio}` : '',
+        ].filter(Boolean)
+      : specsInput.split(',').map((s) => s.trim()).filter(Boolean)
+
+    const finalCaption = isStory ? storyText : caption.trim()
 
     const { error } = await supabase.from('posts').insert([
       {
         user_id: user.id,
-        room_id: roomId || null,
-        stage,
-        caption: caption.trim() || null,
+        room_id: isStory ? null : roomId || null,
+        stage: isStory ? null : stage || null,
+        caption: finalCaption || null,
         image_url: uploadedUrl,
         media_type: mediaType,
         is_story: isStory,
         expires_at: expiresAt,
-        specs: parsedSpecs,
-        cost: cost ? Number(cost) : null,
-        contractor: contractor.trim() || null,
+        specs: storySpecs,
+        cost: isStory ? null : cost ? Number(cost) : null,
+        contractor: isStory ? null : contractor.trim() || null,
       },
     ])
 
@@ -3119,178 +3900,391 @@ export default function UploadMilestonePage() {
       return
     }
 
-    router.push(isStory ? '/profile' : '/')
+    router.push(isStory ? '/profile' : '/feed')
   }
 
-  if (loading) return <div className="p-6 text-xs text-[#9C9A92]">Loading...</div>
+  if (loading) return <div className="p-6 text-xs text-[#888]">Loading...</div>
+
+  const aspectClass =
+    aspectRatio === 'square'
+      ? 'aspect-square'
+      : aspectRatio === 'portrait'
+      ? 'aspect-[4/5]'
+      : 'aspect-video'
 
   return (
-    <div className="px-5 pt-4 pb-12 space-y-4 bg-[#151815] min-h-screen">
+    <div className="px-5 pt-6 pb-20 space-y-4 bg-[#111111] min-h-screen max-w-2xl mx-auto text-white font-sans">
       <div>
-        <p className="text-[10px] uppercase tracking-widest font-semibold text-[#C6A467]">
-          Document Progress
+        <p className="text-[10px] uppercase tracking-widest font-semibold text-[#888]">
+          {postMode === 'story' ? 'Instant Sharing' : 'Document Progress'}
         </p>
-        <h1 className="text-lg font-semibold text-[#F2EFE9]">Log Renovation Milestone</h1>
+        <h1 className="text-lg font-semibold text-white">
+          {postMode === 'story' ? 'Create 24h Story' : 'Log Renovation Milestone'}
+        </h1>
       </div>
 
-      {/* Mode Switcher: Permanent Logbook Entry vs 24h Progress Story */}
-      <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-[#1E221E] border border-[#2E332E]">
-        <button
-          type="button"
-          onClick={() => setPostMode('grid')}
-          className={`py-2 text-xs font-semibold rounded-lg transition-colors ${
-            postMode === 'grid'
-              ? 'bg-[#8FA680] text-[#121612]'
-              : 'text-[#9C9A92] hover:text-[#F2EFE9]'
-          }`}
-        >
-          Logbook & Grid Post
-        </button>
+      {/* Mode Switcher */}
+      <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-[#181818] border border-[#262626]">
         <button
           type="button"
           onClick={() => setPostMode('story')}
           className={`py-2 text-xs font-semibold rounded-lg transition-colors ${
-            postMode === 'story'
-              ? 'bg-[#C6A467] text-[#121612]'
-              : 'text-[#9C9A92] hover:text-[#F2EFE9]'
+            postMode === 'story' ? 'bg-white text-black' : 'text-[#888] hover:text-white'
           }`}
         >
-          24h Quick Story
+          ⚡ 24h Quick Story
+        </button>
+        <button
+          type="button"
+          onClick={() => setPostMode('grid')}
+          className={`py-2 text-xs font-semibold rounded-lg transition-colors ${
+            postMode === 'grid' ? 'bg-white text-black' : 'text-[#888] hover:text-white'
+          }`}
+        >
+          🏡 Logbook & Grid Post
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-3.5">
-        {/* Photo / Video Upload Box */}
-        <label className="block cursor-pointer rounded-2xl bg-[#1E221E] border border-dashed border-[#495B42] hover:border-[#8FA680] p-4 text-center space-y-2 transition-colors">
-          {previewUrl ? (
-            file?.type.startsWith('video/') ? (
-              <video src={previewUrl} controls className="w-full max-h-64 rounded-xl mx-auto" />
-            ) : (
-              <img src={previewUrl} alt="Preview" className="w-full max-h-64 object-cover rounded-xl mx-auto" />
-            )
-          ) : (
-            <div className="py-6 space-y-1">
-              <p className="text-xs font-semibold text-[#8FA680]">+ Tap to Add Photo or Video</p>
-              <p className="text-[11px] text-[#9C9A92]">
-                Before & after shots, plastering progress, paint swatches, or receipts
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Photo / Video Upload & Interactive Viewport */}
+        {!previewUrl ? (
+          <label className="block cursor-pointer rounded-2xl bg-[#181818] border border-dashed border-[#444] hover:border-white p-6 text-center space-y-3 transition-colors group">
+            <div className="w-14 h-14 mx-auto rounded-xl bg-gradient-to-tr from-cyan-500/20 via-purple-500/20 to-pink-500/20 border border-white/10 flex items-center justify-center relative group-hover:scale-105 transition-transform shadow-inner">
+              <svg className="w-7 h-7 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 22V12h6v10" />
+              </svg>
+              <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white text-black text-[10px] font-bold flex items-center justify-center shadow">
+                ↑
+              </span>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-xs font-semibold text-white">+ Tap to Add Story Photo or Video</p>
+              <p className="text-[11px] text-[#888]">
+                Quick updates, live site progress, or on-the-go snaps
               </p>
             </div>
-          )}
-          <input
-            type="file"
-            accept="image/*,video/*"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-        </label>
+            <input type="file" accept="image/*,video/*" onChange={handleFileChange} className="hidden" />
+          </label>
+        ) : (
+          <div className="space-y-3">
+            {/* Interactive Story Canvas Viewport */}
+            <div className="relative w-full bg-black rounded-2xl overflow-hidden border border-[#262626] shadow-xl flex items-center justify-center select-none">
+              <div
+                ref={containerRef}
+                className={`relative w-full ${aspectClass} overflow-hidden bg-[#0A0A0A] cursor-grab active:cursor-grabbing touch-none`}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+              >
+                {file?.type.startsWith('video/') ? (
+                  <video
+                    src={previewUrl}
+                    controls
+                    autoPlay
+                    muted
+                    loop
+                    style={{
+                      transform: `translate(${position.x}px, ${position.y}px) scale(${zoomLevel})`,
+                    }}
+                    className={`w-full h-full object-cover pointer-events-none transition-all ${filterClass}`}
+                  />
+                ) : (
+                  <img
+                    src={previewUrl}
+                    alt="Story preview"
+                    style={{
+                      transform: `translate(${position.x}px, ${position.y}px) scale(${zoomLevel})`,
+                    }}
+                    className={`w-full h-full object-cover pointer-events-none transition-all ${filterClass}`}
+                  />
+                )}
 
-        {/* Room & Stage */}
-        <div className="grid grid-cols-2 gap-2.5">
-          <div>
-            <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">Room / Space</label>
-            <select
-              value={roomId}
-              onChange={(e) => setRoomId(e.target.value)}
-              className="w-full px-3 py-2.5 text-xs bg-[#1E221E] text-[#F2EFE9] border border-[#2E332E] rounded-xl focus:outline-none focus:border-[#8FA680]"
-            >
-              <option value="">Whole House</option>
-              {rooms.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
-          </div>
+                {/* Live Overlays on Story Canvas */}
+                {storyText && (
+                  <div className="absolute inset-x-4 top-1/3 text-center pointer-events-none">
+                    <span className="inline-block px-4 py-2 rounded-xl bg-black/60 backdrop-blur-md text-white text-sm font-bold shadow-lg border border-white/20">
+                      {storyText}
+                    </span>
+                  </div>
+                )}
 
-          <div>
-            <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">Renovation Stage</label>
-            <select
-              value={stage}
-              onChange={(e) => setStage(e.target.value)}
-              className="w-full px-3 py-2.5 text-xs bg-[#1E221E] text-[#F2EFE9] border border-[#2E332E] rounded-xl focus:outline-none focus:border-[#8FA680]"
-            >
-              <option value="Planning & Design">Planning & Design</option>
-              <option value="Stripping Out">Stripping Out</option>
-              <option value="First Fix & Structural">First Fix & Structural</option>
-              <option value="Plastering & Prep">Plastering & Prep</option>
-              <option value="Second Fix & Flooring">Second Fix & Flooring</option>
-              <option value="Painting & Decorating">Painting & Decorating</option>
-              <option value="Furnishing & Styling">Furnishing & Styling</option>
-            </select>
-          </div>
-        </div>
+                {selectedGif && (
+                  <div className="absolute bottom-16 left-4 pointer-events-none">
+                    <span className="px-3 py-1 rounded-full bg-pink-500/80 text-white text-[11px] font-bold shadow border border-white/20">
+                      {selectedGif}
+                    </span>
+                  </div>
+                )}
 
-        {/* Caption */}
-        <div>
-          <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">Notes / Caption</label>
-          <textarea
-            rows={3}
-            placeholder="What was completed today? Any lessons learned or supplier notes..."
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            className="w-full px-3.5 py-2.5 text-xs bg-[#1E221E] text-[#F2EFE9] placeholder-[#6B6962] border border-[#2E332E] rounded-xl resize-none focus:outline-none focus:border-[#8FA680]"
-          />
-        </div>
+                {selectedAudio && (
+                  <div className="absolute top-3 left-3 pointer-events-none flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md text-[10px] text-cyan-400 font-semibold border border-white/10">
+                    <span>🎵</span> {selectedAudio}
+                  </div>
+                )}
 
-        {postMode === 'grid' && (
-          <>
-            <div>
-              <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">
-                Materials, Paints & Specs (comma-separated)
-              </label>
+                <div className="absolute bottom-3 right-3 bg-black/75 backdrop-blur-md px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-white border border-white/10 shadow pointer-events-none">
+                  {aspectRatio}
+                </div>
+              </div>
+            </div>
+
+            {/* Story Creative Tools Bar (Text, Filter, GIF, Audio) */}
+            {postMode === 'story' && (
+              <div className="space-y-2.5 bg-[#181818] p-3 rounded-xl border border-[#262626]">
+                <p className="text-[10px] uppercase font-bold text-[#888] tracking-wider">Story Creative Studio</p>
+                
+                {/* Text Overlay Input */}
+                <input
+                  type="text"
+                  placeholder="Add overlay text..."
+                  value={storyText}
+                  onChange={(e) => setStoryText(e.target.value)}
+                  className="w-full px-3 py-2 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-lg"
+                />
+
+                {/* Filters Row */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                  <span className="text-[10px] text-[#888] pr-1">Filter:</span>
+                  {(['normal', 'mono', 'warm', 'cool', 'dramatic'] as const).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => setSelectedFilter(f)}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase ${
+                        selectedFilter === f ? 'bg-white text-black' : 'bg-[#222] text-[#AAA]'
+                      }`}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+
+                {/* GIF & Audio Toggles */}
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowGifPicker(!showGifPicker)}
+                    className="flex-1 py-1.5 rounded-lg bg-[#222] hover:bg-[#2A2A2A] text-[11px] font-medium text-[#CCC] border border-[#333]"
+                  >
+                    {selectedGif ? '✨ Change Sticker' : '✨ Add GIF Sticker'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAudioPicker(!showAudioPicker)}
+                    className="flex-1 py-1.5 rounded-lg bg-[#222] hover:bg-[#2A2A2A] text-[11px] font-medium text-[#CCC] border border-[#333]"
+                  >
+                    {selectedAudio ? '🎵 Change Audio' : '🎵 Add Music Track'}
+                  </button>
+                </div>
+
+                {/* GIF Dropdown Drawer */}
+                {showGifPicker && (
+                  <div className="flex flex-wrap gap-1.5 pt-2 border-t border-[#262626]">
+                    {popularGifs.map((g, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => { setSelectedGif(g); setShowGifPicker(false); }}
+                        className="px-2.5 py-1 rounded-md bg-[#111] text-[10px] text-pink-400 font-semibold border border-[#333]"
+                      >
+                        {g}
+                      </button>
+                    ))}
+                    <button type="button" onClick={() => { setSelectedGif(null); setShowGifPicker(false); }} className="text-[10px] text-[#888] px-2">Clear</button>
+                  </div>
+                )}
+
+                {/* Audio Dropdown Drawer */}
+                {showAudioPicker && (
+                  <div className="space-y-1 pt-2 border-t border-[#262626]">
+                    {popularAudio.map((a, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => { setSelectedAudio(a); setShowAudioPicker(false); }}
+                        className="w-full text-left px-2.5 py-1 rounded-md bg-[#111] text-[10px] text-cyan-400 font-semibold border border-[#333]"
+                      >
+                        {a}
+                      </button>
+                    ))}
+                    <button type="button" onClick={() => { setSelectedAudio(null); setShowAudioPicker(false); }} className="text-[10px] text-[#888] px-2">Clear</button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Aspect Ratio Toggles & Zoom */}
+            <div className="flex items-center justify-between bg-[#181818] px-3.5 py-2.5 rounded-xl border border-[#262626]">
+              <span className="text-xs font-medium text-[#888]">Frame Ratio:</span>
+              <div className="flex items-center gap-1.5">
+                {(['portrait', 'square', 'landscape'] as const).map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => { setAspectRatio(r); setPosition({ x: 0, y: 0 }); }}
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold uppercase ${
+                      aspectRatio === r ? 'bg-white text-black' : 'bg-[#222] text-[#AAA]'
+                    }`}
+                  >
+                    {r === 'portrait' ? '4:5' : r === 'square' ? '1:1' : '16:9'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 bg-[#181818] px-4 py-2.5 rounded-xl border border-[#262626]">
+              <span className="text-xs font-medium text-[#888] shrink-0">Zoom:</span>
               <input
-                type="text"
-                placeholder="e.g., Farrow & Ball Ammonite, Oak Herringbone, Mapei Silicone"
-                value={specsInput}
-                onChange={(e) => setSpecsInput(e.target.value)}
-                className="w-full px-3.5 py-2.5 text-xs bg-[#1E221E] text-[#F2EFE9] placeholder-[#6B6962] border border-[#2E332E] rounded-xl focus:outline-none focus:border-[#8FA680]"
+                type="range"
+                min="1"
+                max="3"
+                step="0.05"
+                value={zoomLevel}
+                onChange={(e) => handleZoomChange(parseFloat(e.target.value))}
+                className="w-full accent-white cursor-pointer"
+              />
+              <span className="text-xs font-mono text-[#AAA] shrink-0">{zoomLevel.toFixed(1)}x</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => { setFile(null); setPreviewUrl(null); setZoomLevel(1); setPosition({ x: 0, y: 0 }); }}
+              className="text-[11px] text-[#888] underline hover:text-white"
+            >
+              Choose a different media file
+            </button>
+          </div>
+        )}
+
+        {/* Grid-Only Fields (Hidden when in Story Mode) */}
+        {postMode === 'grid' && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-[11px] font-medium text-[#AAA] mb-1">Room / Space</label>
+              <select
+                value={roomId}
+                onChange={handleRoomChange}
+                className="w-full px-3.5 py-2.5 text-xs bg-[#181818] text-white border border-[#262626] rounded-xl focus:outline-none focus:border-white"
+              >
+                <option value="">Whole House</option>
+                {rooms.map((r) => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+                <option disabled value="">──────────────</option>
+                <option value="NEW_ROOM">+ Add New Room...</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-medium text-[#AAA] mb-1">Notes / Caption</label>
+              <textarea
+                rows={3}
+                placeholder="What was completed today? Any lessons learned or supplier notes..."
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                className="w-full px-4 py-3 text-xs bg-[#181818] text-white placeholder-[#666] border border-[#262626] rounded-xl resize-none focus:outline-none focus:border-white"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-2.5">
-              <div>
-                <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">
-                  Cost (£ optional)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="e.g., 240"
-                  value={cost}
-                  onChange={(e) => setCost(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-[#1E221E] text-[#F2EFE9] placeholder-[#6B6962] border border-[#2E332E] rounded-xl focus:outline-none focus:border-[#8FA680]"
-                />
-              </div>
+            {/* Collapsible Optional Details */}
+            <div className="space-y-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowExtra(!showExtra)}
+                className="text-xs font-semibold text-white hover:underline flex items-center gap-1.5"
+              >
+                <span>{showExtra ? '▾ Hide Stage, Materials, Cost & Contractor' : '▸ Add Stage, Materials, Cost & Contractor (Optional)'}</span>
+              </button>
 
-              <div>
-                <label className="block text-[11px] font-medium text-[#C5C2B8] mb-1">
-                  Done By (optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., DIY, Electrician"
-                  value={contractor}
-                  onChange={(e) => setContractor(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-[#1E221E] text-[#F2EFE9] placeholder-[#6B6962] border border-[#2E332E] rounded-xl focus:outline-none focus:border-[#8FA680]"
-                />
-              </div>
+              {showExtra && (
+                <div className="space-y-3.5 p-4 rounded-2xl bg-[#181818] border border-[#262626]">
+                  <div>
+                    <label className="block text-[11px] font-medium text-[#AAA] mb-1">Renovation Stage (Optional)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g., Plastering, First Fix, Styling"
+                      value={stage}
+                      onChange={(e) => setStage(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-[#AAA] mb-1">Materials, Paints & Specs (comma-separated)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g., Ammonite, Oak Herringbone"
+                      value={specsInput}
+                      onChange={(e) => setSpecsInput(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-medium text-[#AAA] mb-1">Cost (£ optional)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="e.g., 240"
+                        value={cost}
+                        onChange={(e) => setCost(e.target.value)}
+                        className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-medium text-[#AAA] mb-1">Done By (optional)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g., DIY, Electrician"
+                        value={contractor}
+                        onChange={(e) => setContractor(e.target.value)}
+                        className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          </>
+          </div>
         )}
 
         <button
           type="submit"
           disabled={submitting}
-          className="w-full py-3 rounded-xl bg-[#8FA680] hover:bg-[#9FB690] text-[#121612] text-xs font-semibold shadow-sm transition-colors"
+          className="w-full py-3.5 rounded-xl bg-white hover:bg-[#E0E0E0] text-black text-xs font-semibold shadow-sm transition-colors"
         >
-          {submitting
-            ? 'Saving...'
-            : postMode === 'story'
-            ? 'Post 24h Story'
-            : 'Save to House Passport'}
+          {submitting ? 'Saving...' : postMode === 'story' ? '🚀 Publish 24h Story' : 'Save to House Passport'}
         </button>
       </form>
+
+      {/* New Room Modal */}
+      {showNewRoomModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-[#181818] border border-[#333] p-5 space-y-4 shadow-2xl text-white">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold">Add New Room or Space</h2>
+              <button type="button" onClick={() => setShowNewRoomModal(false)} className="text-[#888] hover:text-white text-xl">×</button>
+            </div>
+            <form onSubmit={handleCreateNewRoom} className="space-y-3.5">
+              <input
+                type="text"
+                required
+                autoFocus
+                placeholder="Room name (e.g., Master En-Suite)"
+                value={newRoomNameInput}
+                onChange={(e) => setNewRoomNameInput(e.target.value)}
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
+              />
+              <div className="flex items-center gap-2 pt-1">
+                <button type="button" onClick={() => setShowNewRoomModal(false)} className="flex-1 py-2.5 bg-[#222] hover:bg-[#2A2A2A] text-xs font-semibold rounded-xl text-[#CCC]">Cancel</button>
+                <button type="submit" disabled={creatingRoom} className="flex-1 py-2.5 bg-white hover:bg-[#E0E0E0] text-black text-xs font-bold rounded-xl shadow-sm">{creatingRoom ? 'Adding...' : 'Add Room'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -4065,40 +5059,59 @@ export default function AIFloorPlan({
 ==> components/BottomNav.tsx <==
 'use client'
 
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 export default function BottomNav() {
-  const [pathname, setPathname] = useState('')
-
-  useEffect(() => {
-    setPathname(window.location.pathname)
-  }, [])
-
-  if (pathname === '/login') return null
+  const pathname = usePathname()
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#161A16]/90 backdrop-blur-md border-t border-[#2A332A] px-6 py-3 flex justify-around items-center text-xs text-[#9C9A92]">
-      <Link href="/" className={`hover:text-[#8FA680] ${pathname === '/' ? 'text-[#8FA680] font-semibold' : ''}`}>
-        House
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#181818]/95 backdrop-blur-md border-t border-[#262626] px-6 py-3 flex items-center justify-between max-w-lg mx-auto sm:rounded-t-2xl shadow-lg">
+      
+      {/* 1. Feed / Home */}
+      <Link href="/feed" className="flex flex-col items-center gap-1.5 group">
+        <svg className={`w-5 h-5 transition-transform group-hover:scale-110 ${pathname === '/feed' ? 'text-cyan-400' : 'text-[#888]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+        <span className="text-xs font-medium text-[#EDEDED]">Feed</span>
       </Link>
-      <Link href="/floorplan" className={`hover:text-[#8FA680] ${pathname === '/floorplan' ? 'text-[#8FA680] font-semibold' : ''}`}>
-        Floor Plan
+
+      {/* 2. Explore / Search */}
+      <Link href="/explore" className="flex flex-col items-center gap-1.5 group">
+        <svg className={`w-5 h-5 transition-transform group-hover:scale-110 ${pathname === '/explore' ? 'text-purple-400' : 'text-[#888]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <span className="text-xs font-medium text-[#EDEDED]">Explore</span>
       </Link>
-      <Link href="/upload" className={`hover:text-[#8FA680] ${pathname === '/upload' ? 'text-[#8FA680] font-semibold' : ''}`}>
-        + Update
+
+      {/* 3. Center Action Post Button */}
+      <Link href="/upload" className="w-11 h-11 rounded-full bg-gradient-to-tr from-cyan-500 via-purple-500 to-pink-500 text-white flex items-center justify-center text-xl font-bold shadow-md hover:scale-105 transition-transform">
+        +
       </Link>
-      <Link href="/settings" className={`hover:text-[#8FA680] ${pathname === '/settings' ? 'text-[#8FA680] font-semibold' : ''}`}>
-        Settings
+
+      {/* 4. Notifications / Activity */}
+      <Link href="/notifications" className="flex flex-col items-center gap-1.5 group">
+        <svg className={`w-5 h-5 transition-transform group-hover:scale-110 ${pathname === '/notifications' ? 'text-amber-400' : 'text-[#888]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg>
+        <span className="text-xs font-medium text-[#EDEDED]">Activity</span>
       </Link>
-    </div>
+
+      {/* 5. Profile / House Passport */}
+      <Link href="/profile" className="flex flex-col items-center gap-1.5 group">
+        <svg className={`w-5 h-5 transition-transform group-hover:scale-110 ${pathname === '/profile' ? 'text-pink-400' : 'text-[#888]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+        <span className="text-xs font-medium text-[#EDEDED]">Profile</span>
+      </Link>
+    </nav>
   )
 }
 ==> components/FloorPlanContext.tsx <==
 'use client'
 
 import { useState, useEffect, createContext, useContext } from 'react'
-import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
 
 interface FloorPlanContextType {
   activeFloor: string
@@ -4131,9 +5144,81 @@ export function useFloorPlanJob() {
   const [stepText, setStepText] = useState('')
   const [latestPlanUrl, setLatestPlanUrl] = useState<string | null>(null)
 
-  const startGeneration = (...args: any[]) => {
+  // Animated progress step text & timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (isGenerating) {
+      setElapsedSeconds(0)
+      setStepText('Analyzing architectural layout & walls...')
+      interval = setInterval(() => {
+        setElapsedSeconds((s) => {
+          const next = s + 1
+          if (next === 5) setStepText('Tracing exterior boundary & wall centerlines...')
+          if (next === 15) setStepText('Detecting doors, windows, stairs & chimney breasts...')
+          if (next === 25) setStepText('Extracting room dimensions & generating vector blueprint...')
+          if (next === 35) setStepText('Finalizing architectural SVG & saving to House Passport...')
+          return next
+        })
+      }, 1000)
+    }
+    return () => clearInterval(interval)
+  }, [isGenerating])
+
+  // Fully operational AI floor plan generation workflow
+  const startGeneration = async (file: File, userId: string, existingNames: string[] = []) => {
     setIsGenerating(true)
     setJobStatus('running')
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const res = await fetch('/api/parse-floorplan', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'Floor plan parsing failed')
+      }
+
+      const { image2D, rooms } = data
+
+      // 1. Save generated 2D plan to houses table
+      await supabase
+        .from('houses')
+        .upsert({ user_id: userId, plan_2d_url: image2D }, { onConflict: 'user_id' })
+
+      // 2. Insert newly detected rooms if they don't already exist
+      if (Array.isArray(rooms) && rooms.length > 0) {
+        const lowerExisting = new Set(existingNames.map((n) => n.toLowerCase()))
+        const newRoomsToInsert = rooms
+          .filter((r) => !lowerExisting.has(r.name.toLowerCase()))
+          .map((r) => ({
+            user_id: userId,
+            name: r.name,
+            floor_level: 'Ground Floor',
+            status: 'Planning',
+            progress: 0,
+            width_m: r.width_m || null,
+            length_m: r.length_m || null,
+          }))
+
+        if (newRoomsToInsert.length > 0) {
+          await supabase.from('rooms').insert(newRoomsToInsert)
+        }
+      }
+
+      setLatestPlanUrl(image2D)
+      setJobStatus('success')
+    } catch (err: any) {
+      console.error(err)
+      alert('Floor plan generation error: ' + err.message)
+      setJobStatus('error')
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   return {
@@ -4152,34 +5237,6 @@ export function useFloorPlanJob() {
     startGeneration,
   }
 }
-
-export function BottomNav() {
-  const [pathname, setPathname] = useState('')
-
-  useEffect(() => {
-    setPathname(window.location.pathname)
-  }, [])
-
-  if (pathname === '/login') return null
-
-  return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#161A16]/90 backdrop-blur-md border-t border-[#2A332A] px-6 py-3 flex justify-around items-center text-xs text-[#9C9A92]">
-      <Link href="/" className={`hover:text-[#8FA680] ${pathname === '/' ? 'text-[#8FA680] font-semibold' : ''}`}>
-        House
-      </Link>
-      <Link href="/floorplan" className={`hover:text-[#8FA680] ${pathname === '/floorplan' ? 'text-[#8FA680] font-semibold' : ''}`}>
-        Floor Plan
-      </Link>
-      <Link href="/upload" className={`hover:text-[#8FA680] ${pathname === '/upload' ? 'text-[#8FA680] font-semibold' : ''}`}>
-        + Update
-      </Link>
-      <Link href="/settings" className={`hover:text-[#8FA680] ${pathname === '/settings' ? 'text-[#8FA680] font-semibold' : ''}`}>
-        Settings
-      </Link>
-    </div>
-  )
-}
-
 ==> lib/supabase.ts <==
 import { createClient } from '@supabase/supabase-js'
 

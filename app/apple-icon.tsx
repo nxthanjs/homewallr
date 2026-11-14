@@ -10,27 +10,51 @@ export default function AppleIcon() {
         style={{
           width: '100%',
           height: '100%',
-          background: '#151815',
+          background: '#111111',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          borderRadius: '40px',
         }}
       >
-        <svg
-          width="112"
-          height="112"
-          viewBox="0 0 36 36"
-          fill="none"
-          stroke="#8FA680"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+        <div
+          style={{
+            width: '150px',
+            height: '150px',
+            borderRadius: '32px',
+            background: 'linear-gradient(to top right, #06b6d4, #a855f7, #ec4899)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '4px',
+          }}
         >
-          <path d="M5 16L18 6l13 10" />
-          <path d="M24 10.5V7h3v5.8" />
-          <path d="M8 14.5v13l4.5-3.2c1.7.7 3.6 1.1 5.5 1.1 6.1 0 11-4.1 11-9.2v-1.7" />
-          <path d="M15.2 24.3v-6.5h5.6v6.5" />
-        </svg>
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              background: '#181818',
+              borderRadius: '28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <svg
+              width="84"
+              height="84"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#FFFFFF"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 10L12 3l9 7v10a2 2 0 01-2 2H5a2 2 0 01-2-2V10z" />
+              <circle cx="12" cy="14" r="3" />
+            </svg>
+          </div>
+        </div>
       </div>
     ),
     { ...size }

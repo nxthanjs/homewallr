@@ -95,7 +95,7 @@ export default function SpecsDirectoryPage() {
     await supabase.from('houses').upsert({ user_id: user.id, pinned_products: updated }, { onConflict: 'user_id' })
   }
 
-  if (loading) return <div className="p-6 text-xs text-[#9C9A92]">Loading house specs...</div>
+  if (loading) return <div className="p-6 text-xs text-[#888]">Loading house specs...</div>
 
   const q = search.toLowerCase().trim()
   const filteredPinned = pinnedProducts.filter(
@@ -110,20 +110,20 @@ export default function SpecsDirectoryPage() {
   )
 
   return (
-    <div className="px-5 pt-4 pb-12 space-y-5 bg-[#151815] min-h-screen">
+    <div className="px-5 pt-6 pb-16 space-y-5 bg-[#111111] min-h-screen max-w-2xl mx-auto">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-[10px] uppercase tracking-widest font-semibold text-[#C6A467]">
+          <p className="text-[10px] uppercase tracking-widest font-semibold text-[#888]">
             House Passport Directory
           </p>
-          <h1 className="text-lg font-semibold text-[#F2EFE9]">Specs, Paints & Materials</h1>
-          <p className="text-xs text-[#9C9A92]">Every paint shade, tile, and fixture in your home</p>
+          <h1 className="text-lg font-semibold text-white">Specs, Paints & Materials</h1>
+          <p className="text-xs text-[#888]">Every paint shade, tile, and fixture in your home</p>
         </div>
 
         <button
           type="button"
           onClick={() => setShowAdd(true)}
-          className="px-3.5 py-2 rounded-full bg-[#8FA680] hover:bg-[#9FB690] text-[#121612] text-xs font-semibold"
+          className="px-4 py-2 rounded-full bg-white hover:bg-[#E0E0E0] text-black text-xs font-semibold shadow-sm transition-colors"
         >
           + Add Spec
         </button>
@@ -134,42 +134,42 @@ export default function SpecsDirectoryPage() {
         placeholder="Search paint shades, brands, rooms..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="w-full px-3.5 py-2.5 text-xs bg-[#1E221E] text-[#F2EFE9] placeholder-[#6B6962] border border-[#2E332E] rounded-xl focus:outline-none focus:border-[#8FA680]"
+        className="w-full px-4 py-3 text-xs bg-[#181818] text-white placeholder-[#666] border border-[#262626] rounded-xl focus:outline-none focus:border-white"
       />
 
       {/* Saved / Pinned Product Specs */}
-      <div className="space-y-2.5">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9C9A92]">
+      <div className="space-y-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-[#888]">
           Saved House Specs ({filteredPinned.length})
         </h2>
 
         {filteredPinned.length === 0 ? (
-          <div className="rounded-2xl bg-[#1E221E] border border-[#2E332E] p-6 text-center space-y-1.5">
-            <p className="text-xs font-medium text-[#F2EFE9]">No saved specs yet</p>
-            <p className="text-[11px] text-[#9C9A92]">
+          <div className="rounded-2xl bg-[#181818] border border-[#262626] p-6 text-center space-y-1.5">
+            <p className="text-xs font-medium text-white">No saved specs yet</p>
+            <p className="text-[11px] text-[#888]">
               Save paint colours, flooring finishes, and supplier links so you never forget a shade or code.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-3">
             {filteredPinned.map((item) => (
               <div
                 key={item.id}
-                className="rounded-2xl bg-[#1E221E] border border-[#2E332E] p-3.5 space-y-1.5 relative flex flex-col justify-between"
+                className="rounded-2xl bg-[#181818] border border-[#262626] p-4 space-y-2 relative flex flex-col justify-between shadow-sm"
               >
                 <button
                   type="button"
                   onClick={() => handleRemove(item.id)}
-                  className="absolute top-2 right-2.5 text-sm text-[#7D7B73] hover:text-red-400"
+                  className="absolute top-2.5 right-3 text-sm text-[#777] hover:text-red-400"
                 >
                   ×
                 </button>
                 <div className="space-y-1">
-                  <span className="inline-block text-[9px] px-2 py-0.5 rounded bg-[#253025] text-[#8FA680] font-semibold">
+                  <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-[#222] text-[#CCC] font-semibold">
                     {item.brand}
                   </span>
-                  <h3 className="text-xs font-semibold text-[#F2EFE9] leading-snug">{item.name}</h3>
-                  <p className="text-[10px] text-[#9C9A92]">
+                  <h3 className="text-xs font-semibold text-white leading-snug">{item.name}</h3>
+                  <p className="text-[10px] text-[#888]">
                     {item.room || 'Whole House'}
                     {item.price ? ` · ${item.price}` : ''}
                   </p>
@@ -180,7 +180,7 @@ export default function SpecsDirectoryPage() {
                     href={item.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-block text-[11px] font-medium text-[#C6A467] underline pt-1"
+                    className="inline-block text-[11px] font-medium text-white underline pt-1"
                   >
                     Product Link →
                   </a>
@@ -193,18 +193,18 @@ export default function SpecsDirectoryPage() {
 
       {/* Auto-Extracted Specs from Logbook Posts */}
       {filteredTagged.length > 0 && (
-        <div className="space-y-2.5">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9C9A92]">
+        <div className="space-y-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#888]">
             Tagged in Logbook Posts ({filteredTagged.length})
           </h2>
           <div className="flex flex-wrap gap-2">
             {filteredTagged.map((item, idx) => (
               <div
                 key={idx}
-                className="px-3 py-1.5 rounded-xl bg-[#1E221E] border border-[#2E332E] text-xs flex items-center gap-2"
+                className="px-3.5 py-2 rounded-xl bg-[#181818] border border-[#262626] text-xs flex items-center gap-2"
               >
-                <span className="text-[#F2EFE9] font-medium">{item.spec}</span>
-                <span className="text-[10px] text-[#8FA680]">{item.roomName}</span>
+                <span className="text-white font-medium">{item.spec}</span>
+                <span className="text-[10px] text-[#888]">{item.roomName}</span>
               </div>
             ))}
           </div>
@@ -214,43 +214,43 @@ export default function SpecsDirectoryPage() {
       {/* Add Spec Modal */}
       {showAdd && (
         <div
-          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
           onClick={() => setShowAdd(false)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl bg-[#1E221E] border border-[#343B34] p-5 space-y-3 shadow-2xl"
+            className="w-full max-w-sm rounded-2xl bg-[#181818] border border-[#333] p-5 space-y-3.5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-[#F2EFE9]">Add House Spec</h2>
-              <button type="button" onClick={() => setShowAdd(false)} className="text-[#9C9A92] text-lg">
+              <h2 className="text-base font-semibold text-white">Add House Spec</h2>
+              <button type="button" onClick={() => setShowAdd(false)} className="text-[#888] text-lg">
                 ×
               </button>
             </div>
 
-            <form onSubmit={handleAddSpec} className="space-y-2.5">
+            <form onSubmit={handleAddSpec} className="space-y-3">
               <input
                 type="text"
                 required
-                placeholder="Item / Paint Name (e.g., Charleston Gray No. 243)"
+                placeholder="Item / Paint Name (e.g., Charleston Gray)"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl"
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
               />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 <input
                   type="text"
                   placeholder="Brand (e.g., Farrow & Ball)"
                   value={form.brand}
                   onChange={(e) => setForm({ ...form, brand: e.target.value })}
-                  className="px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl"
+                  className="px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
                 />
                 <input
                   type="text"
                   placeholder="Price (e.g., £59)"
                   value={form.price}
                   onChange={(e) => setForm({ ...form, price: e.target.value })}
-                  className="px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl"
+                  className="px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
                 />
               </div>
               <input
@@ -258,19 +258,19 @@ export default function SpecsDirectoryPage() {
                 placeholder="Room (e.g., Hallway, Snug)"
                 value={form.room}
                 onChange={(e) => setForm({ ...form, room: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl"
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
               />
               <input
                 type="url"
                 placeholder="Supplier URL (optional https://...)"
                 value={form.url}
                 onChange={(e) => setForm({ ...form, url: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl"
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
               />
               <button
                 type="submit"
                 disabled={saving}
-                className="w-full py-2.5 bg-[#8FA680] text-[#121612] text-xs font-semibold rounded-xl"
+                className="w-full py-3 bg-white text-black text-xs font-semibold rounded-xl hover:bg-[#E0E0E0]"
               >
                 {saving ? 'Saving...' : 'Save Spec'}
               </button>

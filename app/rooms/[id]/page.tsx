@@ -101,55 +101,55 @@ function RoomDetailContent() {
     router.push('/')
   }
 
-  if (loading) return <div className="p-6 text-xs text-[#9C9A92]">Loading room...</div>
-  if (!room) return <div className="p-6 text-xs text-[#9C9A92]">Room not found.</div>
+  if (loading) return <div className="p-6 text-xs text-[#888]">Loading room...</div>
+  if (!room) return <div className="p-6 text-xs text-[#888]">Room not found.</div>
 
   const totalRoomSpent = posts.reduce((sum, p) => sum + (Number(p.cost) || 0), 0)
   const allSpecs = Array.from(new Set(posts.flatMap((p) => p.specs || [])))
 
   return (
-    <div className="px-5 pt-4 pb-12 space-y-5 bg-[#151815] min-h-screen">
+    <div className="px-5 pt-6 pb-16 space-y-5 bg-[#111111] min-h-screen max-w-2xl mx-auto">
       {/* Back Bar */}
       <div className="flex items-center justify-between">
-        <Link href="/" className="text-xs font-medium text-[#8FA680] hover:underline">
-          ← Back to House
+        <Link href="/profile" className="text-xs font-medium text-white hover:underline">
+          ← Back to Profile
         </Link>
         <button
           type="button"
           onClick={handleDeleteRoom}
-          className="text-[11px] text-[#7D7B73] hover:text-red-400"
+          className="text-[11px] text-[#777] hover:text-red-400"
         >
           Delete Room
         </button>
       </div>
 
       {/* Room Hero Card */}
-      <div className="rounded-2xl bg-gradient-to-br from-[#222B22] to-[#1B201B] border border-[#323E32] p-4 space-y-3.5">
+      <div className="rounded-2xl bg-[#181818] border border-[#262626] p-5 space-y-4 shadow-sm">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-[10px] uppercase tracking-widest font-semibold text-[#C6A467]">
+            <p className="text-[10px] uppercase tracking-widest font-semibold text-[#888]">
               {room.floor_level || 'Room Space'}
             </p>
-            <h1 className="text-xl font-semibold text-[#F2EFE9]">{room.name}</h1>
+            <h1 className="text-xl font-semibold text-white">{room.name}</h1>
             {room.width_m && room.length_m && (
-              <p className="text-xs text-[#9C9A92]">
+              <p className="text-xs text-[#888]">
                 Dimensions: {room.width_m}m × {room.length_m}m
               </p>
             )}
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-[#9C9A92]">Room Spend</p>
-            <p className="text-base font-semibold text-[#C6A467]">
+            <p className="text-[10px] text-[#888]">Room Spend</p>
+            <p className="text-base font-semibold text-white">
               £{totalRoomSpent.toLocaleString()}
             </p>
           </div>
         </div>
 
         {/* Interactive Progress & Status Controls */}
-        <div className="rounded-xl bg-[#141714] border border-[#2C352C] p-3.5 space-y-3">
+        <div className="rounded-xl bg-[#111] border border-[#262626] p-4 space-y-3">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-medium text-[#D5D2C8]">Completion Progress</span>
-            <span className="font-semibold text-[#8FA680]">{progress}%</span>
+            <span className="font-medium text-[#CCC]">Completion Progress</span>
+            <span className="font-semibold text-white">{progress}%</span>
           </div>
 
           <input
@@ -164,14 +164,14 @@ function RoomDetailContent() {
               if (val === 100) setStatus('Complete')
               else if (val > 0 && status === 'Planning') setStatus('In Progress')
             }}
-            className="w-full accent-[#8FA680]"
+            className="w-full accent-white"
           />
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="flex-1 px-3 py-2 text-xs bg-[#1E221E] text-[#F2EFE9] border border-[#323832] rounded-xl"
+              className="flex-1 px-3 py-2 text-xs bg-[#181818] text-white border border-[#262626] rounded-xl"
             >
               <option value="Planning">Planning</option>
               <option value="In Progress">In Progress</option>
@@ -182,7 +182,7 @@ function RoomDetailContent() {
               type="button"
               onClick={handleSaveRoomProgress}
               disabled={saving}
-              className="px-4 py-2 rounded-xl bg-[#8FA680] hover:bg-[#9FB690] text-[#121612] text-xs font-semibold transition-colors"
+              className="px-4 py-2 rounded-xl bg-white hover:bg-[#E0E0E0] text-black text-xs font-semibold transition-colors"
             >
               {saving ? 'Saving...' : 'Save Status'}
             </button>
@@ -192,15 +192,15 @@ function RoomDetailContent() {
 
       {/* Room Specs Summary */}
       {allSpecs.length > 0 && (
-        <div className="rounded-2xl bg-[#1E221E] border border-[#2E332E] p-4 space-y-2">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9C9A92]">
+        <div className="rounded-2xl bg-[#181818] border border-[#262626] p-4 space-y-2.5">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#888]">
             Materials & Paints Used Here
           </h2>
           <div className="flex flex-wrap gap-1.5">
             {allSpecs.map((spec, idx) => (
               <span
                 key={idx}
-                className="text-[11px] px-2.5 py-1 rounded-full bg-[#242E24] text-[#8FA680] font-medium"
+                className="text-[11px] px-3 py-1 rounded-full bg-[#222] text-[#CCC] font-medium"
               >
                 {spec}
               </span>
@@ -210,22 +210,22 @@ function RoomDetailContent() {
       )}
 
       {/* Room Posts & Photos */}
-      <div className="space-y-2.5">
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9C9A92]">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#888]">
             Room Logbook ({posts.length})
           </h2>
-          <Link href="/upload" className="text-xs font-medium text-[#8FA680] underline">
+          <Link href="/upload" className="text-xs font-medium text-white underline">
             + Add Update
           </Link>
         </div>
 
         {posts.length === 0 ? (
-          <div className="rounded-2xl bg-[#1E221E] border border-[#2E332E] p-6 text-center space-y-2">
-            <p className="text-xs text-[#9C9A92]">No milestones logged for {room.name} yet.</p>
+          <div className="rounded-2xl bg-[#181818] border border-[#262626] p-8 text-center space-y-2">
+            <p className="text-xs text-[#888]">No milestones logged for {room.name} yet.</p>
             <Link
               href="/upload"
-              className="inline-block px-4 py-1.5 rounded-full bg-[#8FA680] text-[#121612] text-xs font-semibold"
+              className="inline-block px-4 py-2 rounded-full bg-white text-black text-xs font-semibold"
             >
               + Log First Milestone
             </Link>
@@ -235,7 +235,7 @@ function RoomDetailContent() {
             {posts.map((post) => (
               <div
                 key={post.id}
-                className="rounded-2xl bg-[#1E221E] border border-[#2E332E] overflow-hidden"
+                className="rounded-2xl bg-[#181818] border border-[#262626] overflow-hidden shadow-sm"
               >
                 {post.image_url && (
                   <div className="bg-black">
@@ -247,9 +247,9 @@ function RoomDetailContent() {
                   </div>
                 )}
 
-                <div className="p-3.5 space-y-1.5">
-                  <div className="flex items-center justify-between text-[10px] text-[#9C9A92]">
-                    <span className="font-semibold text-[#8FA680]">{post.stage || 'Update'}</span>
+                <div className="p-4 space-y-2">
+                  <div className="flex items-center justify-between text-[10px] text-[#888]">
+                    <span className="font-semibold text-white">{post.stage || 'Update'}</span>
                     <span>
                       {new Date(post.created_at).toLocaleDateString('en-GB', {
                         day: 'numeric',
@@ -257,14 +257,14 @@ function RoomDetailContent() {
                         year: 'numeric',
                       })}
                       {post.cost ? (
-                        <span className="text-[#C6A467] font-semibold">
+                        <span className="text-white font-semibold">
                           {' '}
                           · £{Number(post.cost).toLocaleString()}
                         </span>
                       ) : null}
                     </span>
                   </div>
-                  {post.caption && <p className="text-xs text-[#F2EFE9] leading-relaxed">{post.caption}</p>}
+                  {post.caption && <p className="text-xs text-[#DDD] leading-relaxed">{post.caption}</p>}
                 </div>
               </div>
             ))}
@@ -277,7 +277,7 @@ function RoomDetailContent() {
 
 export default function RoomDetailPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-xs text-[#9C9A92]">Loading room...</div>}>
+    <Suspense fallback={<div className="p-6 text-xs text-[#888]">Loading room...</div>}>
       <RoomDetailContent />
     </Suspense>
   )

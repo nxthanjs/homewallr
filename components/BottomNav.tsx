@@ -1,82 +1,50 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 export default function BottomNav() {
-  const [pathname, setPathname] = useState('')
-
-  useEffect(() => {
-    setPathname(window.location.pathname)
-  }, [])
-
-  if (pathname === '/login') return null
+  const pathname = usePathname()
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#161A16]/95 backdrop-blur-md border-t border-[#2A332A] px-4 py-2 flex justify-around items-center text-[10px] text-[#9C9A92]">
-      {/* Home */}
-      <Link
-        href="/"
-        className={`flex flex-col items-center gap-1 transition-colors ${
-          pathname === '/' ? 'text-[#8FA680] font-semibold' : 'hover:text-[#F2EFE9]'
-        }`}
-      >
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#181818]/95 backdrop-blur-md border-t border-[#262626] px-6 py-3 flex items-center justify-between max-w-lg mx-auto sm:rounded-t-2xl shadow-lg">
+      
+      {/* 1. Feed / Home */}
+      <Link href="/feed" className="flex flex-col items-center gap-1.5 group">
+        <svg className={`w-5 h-5 transition-transform group-hover:scale-110 ${pathname === '/feed' ? 'text-cyan-400' : 'text-[#888]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
           <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
         </svg>
-        <span>Home</span>
+        <span className="text-xs font-medium text-[#EDEDED]">Feed</span>
       </Link>
 
-      {/* Search / Specs Directory */}
-      <Link
-        href="/shop"
-        className={`flex flex-col items-center gap-1 transition-colors ${
-          pathname === '/shop' ? 'text-[#8FA680] font-semibold' : 'hover:text-[#F2EFE9]'
-        }`}
-      >
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-          <circle cx="11" cy="11" r="8" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" />
+      {/* 2. Explore / Search */}
+      <Link href="/explore" className="flex flex-col items-center gap-1.5 group">
+        <svg className={`w-5 h-5 transition-transform group-hover:scale-110 ${pathname === '/explore' ? 'text-purple-400' : 'text-[#888]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
-        <span>Search</span>
+        <span className="text-xs font-medium text-[#EDEDED]">Explore</span>
       </Link>
 
-      {/* Central + Action Button */}
-      <Link
-        href="/upload"
-        className="flex flex-col items-center justify-center -mt-3 text-[#121612]"
-      >
-        <div className="w-10 h-10 rounded-full bg-[#8FA680] hover:bg-[#9FB690] flex items-center justify-center shadow-lg transition-transform active:scale-95 text-white font-bold text-xl">
-          +
-        </div>
+      {/* 3. Center Action Post Button */}
+      <Link href="/upload" className="w-11 h-11 rounded-full bg-gradient-to-tr from-cyan-500 via-purple-500 to-pink-500 text-white flex items-center justify-center text-xl font-bold shadow-md hover:scale-105 transition-transform">
+        +
       </Link>
 
-      {/* Shop / Catalog */}
-      <Link
-        href="/shop"
-        className={`flex flex-col items-center gap-1 transition-colors ${
-          pathname === '/shop' ? 'text-[#8FA680] font-semibold' : 'hover:text-[#F2EFE9]'
-        }`}
-      >
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+      {/* 4. Notifications / Activity */}
+      <Link href="/notifications" className="flex flex-col items-center gap-1.5 group">
+        <svg className={`w-5 h-5 transition-transform group-hover:scale-110 ${pathname === '/notifications' ? 'text-amber-400' : 'text-[#888]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
-        <span>Shop</span>
+        <span className="text-xs font-medium text-[#EDEDED]">Activity</span>
       </Link>
 
-      {/* Profile */}
-      <Link
-        href="/profile"
-        className={`flex flex-col items-center gap-1 transition-colors ${
-          pathname === '/profile' ? 'text-[#8FA680] font-semibold' : 'hover:text-[#F2EFE9]'
-        }`}
-      >
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-          <circle cx="12" cy="7" r="4" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5.5 21v-2a4 4 0 014-4h5a4 4 0 014 4v2" />
+      {/* 5. Profile / House Passport */}
+      <Link href="/profile" className="flex flex-col items-center gap-1.5 group">
+        <svg className={`w-5 h-5 transition-transform group-hover:scale-110 ${pathname === '/profile' ? 'text-pink-400' : 'text-[#888]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
-        <span>Profile</span>
+        <span className="text-xs font-medium text-[#EDEDED]">Profile</span>
       </Link>
-    </div>
+    </nav>
   )
 }

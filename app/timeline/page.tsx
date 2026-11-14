@@ -146,46 +146,46 @@ export default function TimelinePage() {
 
   const filteredSpend = filteredPosts.reduce((sum, p) => sum + (Number(p.cost) || 0), 0)
 
-  if (loading) return <div className="p-6 text-xs text-[#9C9A92]">Loading renovation logbook...</div>
+  if (loading) return <div className="p-6 text-xs text-[#888]">Loading renovation logbook...</div>
 
   return (
-    <div className="px-5 pt-4 pb-12 space-y-4 bg-[#151815] min-h-screen">
+    <div className="px-5 pt-6 pb-16 space-y-4 bg-[#111111] min-h-screen max-w-2xl mx-auto">
       {/* Header & Summary */}
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-[10px] uppercase tracking-widest font-semibold text-[#C6A467]">
+          <p className="text-[10px] uppercase tracking-widest font-semibold text-[#888]">
             House Passport Archive
           </p>
-          <h1 className="text-lg font-semibold text-[#F2EFE9]">Build Logbook</h1>
-          <p className="text-xs text-[#9C9A92]">
+          <h1 className="text-lg font-semibold text-white">Build Logbook</h1>
+          <p className="text-xs text-[#888]">
             {filteredPosts.length} entries ·{' '}
-            <span className="text-[#C6A467] font-medium">£{filteredSpend.toLocaleString()}</span> logged
+            <span className="text-white font-medium">£{filteredSpend.toLocaleString()}</span> logged
           </p>
         </div>
 
         <Link
           href="/upload"
-          className="px-3.5 py-2 rounded-full bg-[#8FA680] hover:bg-[#9FB690] text-[#121612] text-xs font-semibold transition-colors"
+          className="px-4 py-2 rounded-full bg-white hover:bg-[#E0E0E0] text-black text-xs font-semibold transition-colors shadow-sm"
         >
           + Log Entry
         </Link>
       </div>
 
       {/* Search & Controls */}
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         <input
           type="text"
           placeholder="Search captions, paints, trades, rooms..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full px-3.5 py-2.5 text-xs bg-[#1E221E] text-[#F2EFE9] placeholder-[#6B6962] border border-[#2E332E] rounded-xl focus:outline-none focus:border-[#8FA680]"
+          className="w-full px-4 py-3 text-xs bg-[#181818] text-white placeholder-[#666] border border-[#262626] rounded-xl focus:outline-none focus:border-white"
         />
 
         <div className="flex items-center gap-2">
           <select
             value={selectedRoomId}
             onChange={(e) => setSelectedRoomId(e.target.value)}
-            className="flex-1 px-3 py-2 text-xs bg-[#1E221E] text-[#F2EFE9] border border-[#2E332E] rounded-xl focus:outline-none focus:border-[#8FA680]"
+            className="flex-1 px-3.5 py-2.5 text-xs bg-[#181818] text-white border border-[#262626] rounded-xl focus:outline-none focus:border-white"
           >
             <option value="all">All Rooms ({posts.length})</option>
             {rooms.map((r) => (
@@ -198,7 +198,7 @@ export default function TimelinePage() {
           <button
             type="button"
             onClick={() => setSortOrder(sortOrder === 'newest' ? 'oldest' : 'newest')}
-            className="px-3 py-2 text-xs bg-[#1E221E] text-[#C5C2B8] border border-[#2E332E] rounded-xl hover:border-[#8FA680]"
+            className="px-3.5 py-2.5 text-xs bg-[#181818] text-[#CCC] border border-[#262626] rounded-xl hover:border-white"
           >
             {sortOrder === 'newest' ? '↓ Newest' : '↑ Oldest'}
           </button>
@@ -207,46 +207,46 @@ export default function TimelinePage() {
 
       {/* Vertical Timeline Feed */}
       {filteredPosts.length === 0 ? (
-        <div className="rounded-2xl bg-[#1E221E] border border-[#2E332E] p-8 text-center space-y-2">
-          <p className="text-xs text-[#9C9A92]">No matching renovation logs found.</p>
+        <div className="rounded-2xl bg-[#181818] border border-[#262626] p-8 text-center space-y-2">
+          <p className="text-xs text-[#888]">No matching renovation logs found.</p>
           <Link
             href="/upload"
-            className="inline-block px-4 py-2 rounded-full bg-[#8FA680] text-[#121612] text-xs font-semibold"
+            className="inline-block px-4 py-2 rounded-full bg-white text-black text-xs font-semibold"
           >
             + Add Milestone
           </Link>
         </div>
       ) : (
-        <div className="relative pl-5 border-l-2 border-[#2D382D] space-y-5 ml-1.5">
+        <div className="relative pl-5 border-l-2 border-[#262626] space-y-5 ml-1.5">
           {filteredPosts.map((post) => (
             <div key={post.id} className="relative">
               {/* Timeline Node Dot */}
-              <span className="absolute -left-[25px] top-1.5 w-3 h-3 rounded-full bg-[#8FA680] ring-4 ring-[#151815]" />
+              <span className="absolute -left-[25px] top-1.5 w-3 h-3 rounded-full bg-white ring-4 ring-[#111]" />
 
-              <div className="rounded-2xl bg-[#1E221E] border border-[#2E332E] overflow-hidden">
+              <div className="rounded-2xl bg-[#181818] border border-[#262626] overflow-hidden shadow-sm">
                 {/* Card Top Meta */}
-                <div className="px-3.5 py-2.5 flex items-center justify-between border-b border-[#282E28]">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-[#253025] text-[#8FA680]">
+                <div className="px-4 py-3 flex items-center justify-between border-b border-[#222]">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded bg-[#222] text-[#CCC]">
                       {getRoomName(post.room_id)}
                     </span>
                     {post.stage && (
-                      <span className="text-[11px] font-medium text-[#C5C2B8]">{post.stage}</span>
+                      <span className="text-[11px] font-medium text-[#AAA]">{post.stage}</span>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2.5 text-[11px]">
+                  <div className="flex items-center gap-3 text-[11px]">
                     <button
                       type="button"
                       onClick={() => openEditModal(post)}
-                      className="text-[#8FA680] hover:underline font-medium"
+                      className="text-white hover:underline font-medium"
                     >
                       Edit
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDeletePost(post.id)}
-                      className="text-[#7D7B73] hover:text-red-400"
+                      className="text-[#777] hover:text-red-400"
                     >
                       Delete
                     </button>
@@ -274,9 +274,9 @@ export default function TimelinePage() {
                 )}
 
                 {/* Details */}
-                <div className="p-3.5 space-y-2">
+                <div className="p-4 space-y-2.5">
                   {post.caption && (
-                    <p className="text-xs text-[#F2EFE9] leading-relaxed">{post.caption}</p>
+                    <p className="text-xs text-white leading-relaxed">{post.caption}</p>
                   )}
 
                   {post.specs && post.specs.length > 0 && (
@@ -284,7 +284,7 @@ export default function TimelinePage() {
                       {post.specs.map((spec, idx) => (
                         <span
                           key={idx}
-                          className="text-[10px] px-2 py-0.5 rounded bg-[#141714] border border-[#2C332C] text-[#C5C2B8]"
+                          className="text-[10px] px-2.5 py-1 rounded-full bg-[#111] border border-[#262626] text-[#CCC]"
                         >
                           {spec}
                         </span>
@@ -292,7 +292,7 @@ export default function TimelinePage() {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between pt-1 text-[10px] text-[#9C9A92]">
+                  <div className="flex items-center justify-between pt-1 text-[10px] text-[#888]">
                     <span>
                       {new Date(post.created_at).toLocaleDateString('en-GB', {
                         day: 'numeric',
@@ -303,7 +303,7 @@ export default function TimelinePage() {
                     </span>
 
                     {post.cost !== null && post.cost !== undefined && (
-                      <span className="font-semibold text-[#C6A467]">
+                      <span className="font-semibold text-white">
                         £{Number(post.cost).toLocaleString()}
                       </span>
                     )}
@@ -318,32 +318,32 @@ export default function TimelinePage() {
       {/* Edit Post Modal */}
       {editingPost && (
         <div
-          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
           onClick={() => setEditingPost(null)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl bg-[#1E221E] border border-[#343B34] p-5 space-y-3 shadow-2xl"
+            className="w-full max-w-sm rounded-2xl bg-[#181818] border border-[#333] p-5 space-y-3.5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-[#F2EFE9]">Edit Logbook Entry</h2>
+              <h2 className="text-base font-semibold text-white">Edit Logbook Entry</h2>
               <button
                 type="button"
                 onClick={() => setEditingPost(null)}
-                className="text-[#9C9A92] text-lg"
+                className="text-[#888] text-lg"
               >
                 ×
               </button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="space-y-2.5">
-              <div className="grid grid-cols-2 gap-2">
+            <form onSubmit={handleSaveEdit} className="space-y-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-[10px] text-[#9C9A92] mb-1">Room</label>
+                  <label className="block text-[10px] text-[#888] mb-1">Room</label>
                   <select
                     value={editRoomId}
                     onChange={(e) => setEditRoomId(e.target.value)}
-                    className="w-full px-2.5 py-2 text-xs bg-[#141714] text-[#F2EFE9] border border-[#323832] rounded-xl"
+                    className="w-full px-3 py-2 text-xs bg-[#111] text-white border border-[#262626] rounded-xl"
                   >
                     <option value="">Whole House</option>
                     {rooms.map((r) => (
@@ -355,11 +355,11 @@ export default function TimelinePage() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] text-[#9C9A92] mb-1">Stage</label>
+                  <label className="block text-[10px] text-[#888] mb-1">Stage</label>
                   <select
                     value={editStage}
                     onChange={(e) => setEditStage(e.target.value)}
-                    className="w-full px-2.5 py-2 text-xs bg-[#141714] text-[#F2EFE9] border border-[#323832] rounded-xl"
+                    className="w-full px-3 py-2 text-xs bg-[#111] text-white border border-[#262626] rounded-xl"
                   >
                     <option value="Planning & Design">Planning & Design</option>
                     <option value="Stripping Out">Stripping Out</option>
@@ -373,45 +373,45 @@ export default function TimelinePage() {
               </div>
 
               <div>
-                <label className="block text-[10px] text-[#9C9A92] mb-1">Caption / Notes</label>
+                <label className="block text-[10px] text-[#888] mb-1">Caption / Notes</label>
                 <textarea
                   rows={3}
                   value={editCaption}
                   onChange={(e) => setEditCaption(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] border border-[#323832] rounded-xl resize-none"
+                  className="w-full px-3 py-2 text-xs bg-[#111] text-white border border-[#262626] rounded-xl resize-none"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] text-[#9C9A92] mb-1">
+                <label className="block text-[10px] text-[#888] mb-1">
                   Materials / Paint Specs (comma-separated)
                 </label>
                 <input
                   type="text"
                   value={editSpecs}
                   onChange={(e) => setEditSpecs(e.target.value)}
-                  className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] border border-[#323832] rounded-xl"
+                  className="w-full px-3 py-2 text-xs bg-[#111] text-white border border-[#262626] rounded-xl"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-[10px] text-[#9C9A92] mb-1">Cost (£)</label>
+                  <label className="block text-[10px] text-[#888] mb-1">Cost (£)</label>
                   <input
                     type="number"
                     step="0.01"
                     value={editCost}
                     onChange={(e) => setEditCost(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] border border-[#323832] rounded-xl"
+                    className="w-full px-3 py-2 text-xs bg-[#111] text-white border border-[#262626] rounded-xl"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] text-[#9C9A92] mb-1">Contractor / DIY</label>
+                  <label className="block text-[10px] text-[#888] mb-1">Contractor / DIY</label>
                   <input
                     type="text"
                     value={editContractor}
                     onChange={(e) => setEditContractor(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] border border-[#323832] rounded-xl"
+                    className="w-full px-3 py-2 text-xs bg-[#111] text-white border border-[#262626] rounded-xl"
                   />
                 </div>
               </div>
@@ -419,7 +419,7 @@ export default function TimelinePage() {
               <button
                 type="submit"
                 disabled={savingEdit}
-                className="w-full py-2.5 bg-[#8FA680] text-[#121612] text-xs font-semibold rounded-xl"
+                className="w-full py-3 bg-white text-black text-xs font-semibold rounded-xl hover:bg-[#E0E0E0]"
               >
                 {savingEdit ? 'Saving...' : 'Save Changes'}
               </button>

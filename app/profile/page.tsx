@@ -68,6 +68,10 @@ export default function VisualProfilePage() {
   const [houseTitle, setHouseTitle] = useState('The 1930s Semi')
   const [houseEra, setHouseEra] = useState('1930s Semi-Detached')
 
+  // Social Stats
+  const [followersCount, setFollowersCount] = useState(0)
+  const [followingCount, setFollowingCount] = useState(0)
+
   // Data collections
   const [rooms, setRooms] = useState<RoomCollection[]>([])
   const [gridPosts, setGridPosts] = useState<GridPost[]>([])
@@ -119,6 +123,20 @@ export default function VisualProfilePage() {
       }
 
       await fetchRooms()
+
+      // Fetch Followers and Following counts from follows table
+      const { count: followersC } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', auth.user.id)
+
+      const { count: followingC } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('follower_id', auth.user.id)
+
+      setFollowersCount(followersC || 0)
+      setFollowingCount(followingC || 0)
 
       const { data: postsData } = await supabase
         .from('posts')
@@ -229,7 +247,7 @@ export default function VisualProfilePage() {
     await supabase.from('houses').upsert({ user_id: user.id, pinned_products: updated }, { onConflict: 'user_id' })
   }
 
-  if (loading) return <div className="p-6 text-xs text-[#9C9A92]">Loading profile...</div>
+  if (loading) return <div className="p-6 text-xs text-[#888]">Loading profile...</div>
 
   const handle = user?.email?.split('@')[0] || 'homeowner'
   const displayInitial = (ownerNames || handle)[0].toUpperCase()
@@ -247,36 +265,37 @@ export default function VisualProfilePage() {
       : gridPosts.filter((p) => p.room_id === selectedRoomFilter)
 
   return (
-    <div className="pb-12 bg-[#151815] min-h-screen">
-      {/* 1. Profile Identity Section */}
-      <div className="px-5 pt-4 pb-3 space-y-3">
+    <div className="pb-16 bg-[#111111] min-h-screen text-[#EDEDED] font-sans">
+      {/* 1. Profile Identity Section with Larger Avatar & Prominent @Handle */}
+      <div className="px-5 pt-6 pb-4 space-y-4 max-w-2xl mx-auto">
         <div className="flex items-center justify-between">
-          <p className="text-[11px] font-semibold tracking-widest uppercase text-[#9C9A92]">
+          <p className="text-[10px] font-bold tracking-widest uppercase text-[#888]">
             PROFILE
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <Link
               href="/timeline"
-              className="text-[11px] font-medium text-[#F2EFE9] bg-[#222B22] hover:bg-[#2B362B] border border-[#344234] px-3 py-1 rounded-full transition-colors"
+              className="text-xs font-semibold text-white bg-[#1A1A1A] hover:bg-[#262626] border border-[#2A2A2A] px-3.5 py-1.5 rounded-full transition-colors"
             >
               Logbook
             </Link>
             <Link
               href="/settings"
-              className="text-[11px] font-medium text-[#F2EFE9] bg-[#1E221E] hover:bg-[#282D28] border border-[#323832] px-3 py-1 rounded-full transition-colors"
+              className="text-xs font-semibold text-white bg-[#1A1A1A] hover:bg-[#262626] border border-[#2A2A2A] px-3.5 py-1.5 rounded-full transition-colors"
             >
               Edit Profile
             </Link>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-5">
+          {/* Larger Profile Picture Container */}
           <button
             type="button"
             onClick={() => hasStories && setStoryIndex(0)}
             className={`relative shrink-0 rounded-full p-0.5 transition-transform ${
               hasStories
-                ? 'bg-gradient-to-tr from-[#8FA680] via-[#C6A467] to-[#6D855E] cursor-pointer active:scale-95'
+                ? 'bg-gradient-to-tr from-cyan-500 via-purple-500 to-pink-500 cursor-pointer active:scale-95 animate-rgb'
                 : 'bg-transparent cursor-default'
             }`}
           >
@@ -284,75 +303,86 @@ export default function VisualProfilePage() {
               <img
                 src={avatarUrl}
                 alt={ownerNames || handle}
-                className="w-20 h-20 rounded-full object-cover border-2 border-[#151815]"
+                className="w-24 h-24 rounded-full object-cover border-2 border-[#111]"
               />
             ) : (
-              <div className="w-20 h-20 rounded-full bg-[#263126] text-[#8FA680] flex items-center justify-center text-2xl font-semibold border-2 border-[#151815]">
+              <div className="w-24 h-24 rounded-full bg-[#1E1E1E] text-white flex items-center justify-center text-3xl font-bold tracking-tight border-2 border-[#111]">
                 {displayInitial}
               </div>
             )}
             {hasStories && (
-              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-[#8FA680] text-[#121612] text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-[#151815]">
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-[#111]">
                 {activeStories.length} Story
               </span>
             )}
           </button>
 
-          <div className="space-y-0.5 min-w-0">
-            <h1 className="text-xl font-semibold text-[#F2EFE9] truncate leading-tight">
-              {ownerNames || `@${handle}`}
+          {/* Prominent Handle First, Name Underneath */}
+          <div className="space-y-1 min-w-0">
+            <h1 className="text-xl font-bold tracking-tight text-white truncate leading-tight">
+              @{handle}
             </h1>
-            <p className="text-xs text-[#9C9A92]">@{handle}</p>
-            {bio && <p className="text-xs text-[#D5D2C8] line-clamp-2 pt-0.5">{bio}</p>}
-            {location && <p className="text-xs font-medium text-[#C6A467] pt-0.5">{location}</p>}
+            <p className="text-sm font-medium text-[#A3A3A3] truncate">
+              {ownerNames || houseTitle}
+            </p>
+            {bio && <p className="text-xs text-[#888] line-clamp-2 pt-0.5">{bio}</p>}
+            {location && <p className="text-xs font-medium text-[#777] pt-0.5">{location}</p>}
           </div>
         </div>
 
-        {/* Stats Row */}
-        <div className="flex items-center justify-between pt-2 text-xs text-[#C5C2B8] border-t border-[#262B26]">
+        {/* Stats Row with Followers & Following */}
+        <div className="flex items-center justify-between pt-3 text-xs font-medium text-[#A3A3A3] border-t border-[#222]">
           <span>
-            Houses: <strong className="font-semibold text-[#F2EFE9]">1</strong>
+            Houses: <strong className="font-bold text-white">1</strong>
           </span>
           <span>
-            Rooms: <strong className="font-semibold text-[#F2EFE9]">{rooms.length}</strong>
+            Rooms: <strong className="font-bold text-white">{rooms.length}</strong>
           </span>
           <span>
-            Posts: <strong className="font-semibold text-[#F2EFE9]">{gridPosts.length}</strong>
+            Posts: <strong className="font-bold text-white">{gridPosts.length}</strong>
+          </span>
+          <span>
+            Followers: <strong className="font-bold text-white">{followersCount}</strong>
+          </span>
+          <span>
+            Following: <strong className="font-bold text-white">{followingCount}</strong>
           </span>
         </div>
       </div>
 
-      {/* 2. Full-Width Deep Forest Milestone Band */}
-      <div className="bg-[#1D241D] border-y border-[#2D382D] px-5 py-3.5 space-y-2.5">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-[#F2EFE9]">Renovation Stage</span>
-          <span className="text-[11px] font-semibold text-[#8FA680]">{avgProgress}% Complete</span>
-        </div>
-
-        <div className="relative pt-1">
-          <div className="w-full h-2 bg-[#121512] rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#8FA680] rounded-full transition-all duration-500"
-              style={{ width: `${Math.max(12, avgProgress)}%` }}
-            />
+      {/* 2. Milestone Band */}
+      <div className="bg-[#161616] border-y border-[#222] px-5 py-4 space-y-3">
+        <div className="max-w-2xl mx-auto space-y-3 w-full">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-white">Renovation Stage</span>
+            <span className="text-xs font-bold text-[#CCC]">{avgProgress}% Complete</span>
           </div>
-          <div className="flex justify-between text-[10px] font-medium text-[#7D7B73] pt-1.5">
-            <span className={avgProgress >= 0 ? 'text-[#C6A467] font-semibold' : ''}>Planning</span>
-            <span className={avgProgress >= 40 ? 'text-[#C6A467] font-semibold' : ''}>Structural</span>
-            <span className={avgProgress >= 80 ? 'text-[#C6A467] font-semibold' : ''}>Interior Style</span>
+
+          <div className="relative pt-1">
+            <div className="w-full h-2.5 bg-[#0D0D0D] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-full transition-all duration-500"
+                style={{ width: `${Math.max(12, avgProgress)}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-[11px] font-semibold text-[#777] pt-2">
+              <span className={avgProgress >= 0 ? 'text-white' : ''}>Planning</span>
+              <span className={avgProgress >= 40 ? 'text-white' : ''}>Structural</span>
+              <span className={avgProgress >= 80 ? 'text-white' : ''}>Interior Style</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 3. Clean Underlined Tabs (Posts First, My House Second) */}
-      <div className="px-5 pt-2 border-b border-[#2A302A] flex items-center justify-between bg-[#151815]">
+      {/* 3. Clean Underlined Tabs */}
+      <div className="px-5 pt-3 border-b border-[#222] flex items-center justify-center gap-8 bg-[#111] sticky top-[57px] z-40">
         <button
           type="button"
           onClick={() => setActiveTab('posts')}
-          className={`pb-2.5 text-xs font-semibold transition-colors border-b-2 ${
+          className={`pb-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
             activeTab === 'posts'
-              ? 'border-[#8FA680] text-[#F2EFE9]'
-              : 'border-transparent text-[#8B8982] hover:text-[#D5D2C8]'
+              ? 'border-white text-white'
+              : 'border-transparent text-[#777] hover:text-[#CCC]'
           }`}
         >
           Posts ({gridPosts.length})
@@ -361,10 +391,10 @@ export default function VisualProfilePage() {
         <button
           type="button"
           onClick={() => setActiveTab('house')}
-          className={`pb-2.5 text-xs font-semibold transition-colors border-b-2 ${
+          className={`pb-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
             activeTab === 'house'
-              ? 'border-[#8FA680] text-[#F2EFE9]'
-              : 'border-transparent text-[#8B8982] hover:text-[#D5D2C8]'
+              ? 'border-white text-white'
+              : 'border-transparent text-[#777] hover:text-[#CCC]'
           }`}
         >
           My House
@@ -373,28 +403,28 @@ export default function VisualProfilePage() {
         <button
           type="button"
           onClick={() => setActiveTab('pinned_ideas')}
-          className={`pb-2.5 text-xs font-semibold transition-colors border-b-2 ${
+          className={`pb-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
             activeTab === 'pinned_ideas'
-              ? 'border-[#8FA680] text-[#F2EFE9]'
-              : 'border-transparent text-[#8B8982] hover:text-[#D5D2C8]'
+              ? 'border-white text-white'
+              : 'border-transparent text-[#777] hover:text-[#CCC]'
           }`}
         >
           Pinned Ideas ({savedPins.length})
         </button>
       </div>
 
-      {/* TAB 1: POSTS GRID (Instagram 4:5 Portrait Grid) */}
+      {/* TAB 1: PINTEREST-STYLE MASONRY GRID */}
       {activeTab === 'posts' && (
-        <div className="pt-3 space-y-3">
+        <div className="pt-4 px-3 max-w-5xl mx-auto space-y-4">
           {rooms.length > 0 && (
-            <div className="px-5 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-2 px-2">
               <button
                 type="button"
                 onClick={() => setSelectedRoomFilter('all')}
-                className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-medium transition-colors ${
+                className={`shrink-0 px-4 py-2 rounded-full text-xs font-semibold transition-colors ${
                   selectedRoomFilter === 'all'
-                    ? 'bg-[#8FA680] text-[#121612] font-semibold'
-                    : 'bg-[#1E221E] text-[#C5C2B8] border border-[#2E332E]'
+                    ? 'bg-white text-black shadow-sm'
+                    : 'bg-[#1C1C1C] text-[#AAA] border border-[#2A2A2A]'
                 }`}
               >
                 All Rooms
@@ -404,10 +434,10 @@ export default function VisualProfilePage() {
                   key={room.id}
                   type="button"
                   onClick={() => setSelectedRoomFilter(room.id)}
-                  className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-medium transition-colors ${
+                  className={`shrink-0 px-4 py-2 rounded-full text-xs font-semibold transition-colors ${
                     selectedRoomFilter === room.id
-                      ? 'bg-[#8FA680] text-[#121612] font-semibold'
-                      : 'bg-[#1E221E] text-[#C5C2B8] border border-[#2E332E]'
+                      ? 'bg-white text-black shadow-sm'
+                      : 'bg-[#1C1C1C] text-[#AAA] border border-[#2A2A2A]'
                   }`}
                 >
                   {room.name}
@@ -417,71 +447,73 @@ export default function VisualProfilePage() {
           )}
 
           {visiblePosts.length === 0 ? (
-            <div className="mx-5 p-8 rounded-2xl bg-[#1E221E] border border-[#2E332E] text-center space-y-2">
-              <p className="text-xs text-[#9C9A92]">No photos or videos posted yet.</p>
+            <div className="mx-5 p-10 rounded-2xl bg-[#181818] border border-[#262626] text-center space-y-3">
+              <p className="text-xs font-medium text-[#888]">No photos or videos posted yet.</p>
               <Link
                 href="/upload"
-                className="inline-block px-4 py-2 rounded-full bg-[#8FA680] text-[#121612] text-xs font-semibold"
+                className="inline-block px-5 py-2.5 rounded-full bg-white text-black text-xs font-semibold"
               >
                 + Post First Update
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-0.5 bg-[#0E100E]">
+            /* Pinterest Masonry Layout */
+            <div className="columns-2 sm:columns-3 md:columns-4 gap-3 space-y-3">
               {visiblePosts.map((post) => {
                 const isVideo = post.media_type === 'video'
                 const hasSpecs = Array.isArray(post.specs) && post.specs.length > 0
                 return (
-                  <button
-                    key={post.id}
-                    type="button"
-                    onClick={() => setSelectedPost(post)}
-                    className="relative aspect-[4/5] bg-[#1E221E] overflow-hidden group text-left focus:outline-none"
-                  >
-                    {post.image_url ? (
-                      isVideo ? (
-                        <video
-                          src={post.image_url}
-                          muted
-                          playsInline
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                        />
+                  <div key={post.id} className="break-inside-avoid">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPost(post)}
+                      className="relative w-full rounded-2xl overflow-hidden bg-[#1A1A1A] group text-left focus:outline-none block shadow-md hover:ring-2 hover:ring-white/40 transition-all"
+                    >
+                      {post.image_url ? (
+                        isVideo ? (
+                          <video
+                            src={post.image_url}
+                            muted
+                            playsInline
+                            className="w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <img
+                            src={post.image_url}
+                            alt={post.caption || 'Renovation photo'}
+                            className="w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        )
                       ) : (
-                        <img
-                          src={post.image_url}
-                          alt={post.caption || 'Renovation photo'}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                        />
-                      )
-                    ) : (
-                      <div className="w-full h-full p-2.5 flex flex-col justify-between bg-[#1D241D]">
-                        <span className="text-[9px] uppercase tracking-wider font-semibold text-[#8FA680]">
-                          {getRoomName(post.room_id)}
+                        <div className="w-full p-4 flex flex-col justify-between bg-[#1C1C1C] min-h-[140px]">
+                          <span className="text-[10px] uppercase tracking-wider font-semibold text-[#888]">
+                            {getRoomName(post.room_id)}
+                          </span>
+                          <p className="text-xs text-[#DDD] line-clamp-5 leading-snug pt-2">
+                            {post.caption || post.stage || 'Note'}
+                          </p>
+                        </div>
+                      )}
+
+                      {isVideo && (
+                        <span className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-black/75 text-white flex items-center justify-center text-[10px] shadow">
+                          ▶
                         </span>
-                        <p className="text-[11px] text-[#E5E2DA] line-clamp-5 leading-snug">
-                          {post.caption || post.stage || 'Note'}
-                        </p>
-                      </div>
-                    )}
+                      )}
 
-                    {isVideo && (
-                      <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/75 text-white flex items-center justify-center text-[9px]">
-                        ▶
-                      </span>
-                    )}
+                      {!isVideo && hasSpecs && (
+                        <span className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-black/70 text-white flex items-center justify-center text-xs shadow">
+                          🏷
+                        </span>
+                      )}
 
-                    {!isVideo && hasSpecs && (
-                      <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/70 text-[#C6A467] flex items-center justify-center text-[10px]">
-                        🏷
-                      </span>
-                    )}
-
-                    {selectedRoomFilter === 'all' && post.room_id && post.image_url && (
-                      <span className="absolute bottom-1.5 left-1.5 max-w-[85%] truncate bg-black/75 backdrop-blur-xs text-[#F2EFE9] text-[9px] font-medium px-1.5 py-0.5 rounded">
-                        {getRoomName(post.room_id)}
-                      </span>
-                    )}
-                  </button>
+                      {post.room_id && post.image_url && (
+                        <div className="absolute bottom-2.5 left-2.5 max-w-[85%] truncate bg-black/50 backdrop-blur-md border border-white/15 text-white text-[10px] font-medium px-2.5 py-1 rounded-full shadow">
+                          {getRoomName(post.room_id)}
+                        </div>
+                      )}
+                    </button>
+                  </div>
                 )
               })}
             </div>
@@ -491,14 +523,14 @@ export default function VisualProfilePage() {
 
       {/* TAB 2: MY HOUSE */}
       {activeTab === 'house' && (
-        <div className="px-5 pt-4 space-y-4">
-          <div className="rounded-2xl bg-[#1C221C] border border-[#2F3B2F] p-4 space-y-3">
+        <div className="px-5 pt-4 max-w-2xl mx-auto space-y-4">
+          <div className="rounded-2xl bg-[#181818] border border-[#262626] p-5 space-y-3.5">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <h2 className="text-base font-semibold text-[#F2EFE9]">{houseTitle}</h2>
-                <p className="text-[11px] text-[#9C9A92]">{houseEra}</p>
+                <h2 className="text-sm font-bold text-white">{houseTitle}</h2>
+                <p className="text-xs text-[#888]">{houseEra}</p>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-[#141814] border border-[#2E382E] text-[11px] font-semibold text-[#8FA680]">
+              <span className="px-3 py-1 rounded-full bg-[#111] border border-[#262626] text-xs font-semibold text-white">
                 {avgProgress}% Complete
               </span>
             </div>
@@ -513,43 +545,43 @@ export default function VisualProfilePage() {
             )}
           </div>
 
-          <div className="rounded-2xl bg-[#1E221E] border border-[#2E332E] p-4 space-y-2.5">
+          <div className="rounded-2xl bg-[#181818] border border-[#262626] p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-[#9C9A92]">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#888]">
                 House Specs & Paints ({pinnedProducts.length})
               </h3>
               <button
                 type="button"
                 onClick={() => setShowPinProductModal(true)}
-                className="text-xs font-medium text-[#8FA680] underline"
+                className="text-xs font-semibold text-white underline hover:text-[#CCC]"
               >
                 + Add Spec
               </button>
             </div>
 
             {pinnedProducts.length === 0 ? (
-              <p className="text-xs text-[#8B8982]">
+              <p className="text-xs text-[#777]">
                 Save your paint colours, flooring, and hardware specs here for easy reference.
               </p>
             ) : (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 {pinnedProducts.map((item) => (
                   <div
                     key={item.id}
-                    className="p-2.5 rounded-xl bg-[#151815] border border-[#2A302A] space-y-1 relative"
+                    className="p-3 rounded-xl bg-[#111] border border-[#262626] space-y-1.5 relative"
                   >
                     <button
                       type="button"
                       onClick={() => removePinnedProduct(item.id)}
-                      className="absolute top-1.5 right-2 text-xs text-[#7D7B73] hover:text-red-400"
+                      className="absolute top-2 right-2.5 text-sm text-[#777] hover:text-red-400"
                     >
                       ×
                     </button>
-                    <span className="inline-block text-[9px] px-1.5 py-0.5 rounded bg-[#232D23] text-[#8FA680] font-medium">
+                    <span className="inline-block text-[10px] px-2 py-0.5 rounded bg-[#222] text-[#CCC] font-semibold">
                       {item.brand}
                     </span>
-                    <p className="text-xs font-semibold text-[#F2EFE9] line-clamp-1">{item.name}</p>
-                    <p className="text-[10px] text-[#9C9A92]">
+                    <p className="text-xs font-bold text-white line-clamp-1">{item.name}</p>
+                    <p className="text-[11px] text-[#888]">
                       {item.price || 'Saved'} {item.room ? `· ${item.room}` : ''}
                     </p>
                   </div>
@@ -562,16 +594,16 @@ export default function VisualProfilePage() {
 
       {/* TAB 3: PINNED IDEAS MOODBOARD */}
       {activeTab === 'pinned_ideas' && (
-        <div className="px-5 pt-4 space-y-3">
+        <div className="px-5 pt-4 max-w-2xl mx-auto space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-semibold text-[#F2EFE9]">Pinned Ideas & Looks</h2>
-              <p className="text-[11px] text-[#9C9A92]">Saved inspiration, paint shades & layouts</p>
+              <h2 className="text-sm font-bold text-white">Pinned Ideas & Looks</h2>
+              <p className="text-xs text-[#888]">Saved inspiration, paint shades & layouts</p>
             </div>
             <button
               type="button"
               onClick={() => setShowPinIdeaModal(true)}
-              className="px-3 py-1.5 rounded-full bg-[#8FA680] text-[#121612] text-xs font-semibold"
+              className="px-4 py-2 rounded-full bg-white text-black text-xs font-semibold shadow-sm hover:bg-[#E0E0E0]"
             >
               + Pin Idea
             </button>
@@ -581,48 +613,48 @@ export default function VisualProfilePage() {
             <button
               type="button"
               onClick={() => setShowPinIdeaModal(true)}
-              className="w-full p-6 rounded-2xl bg-[#1C221C] border border-dashed border-[#495B42] text-xs text-[#F2EFE9] text-center space-y-1"
+              className="w-full p-8 rounded-2xl bg-[#181818] border border-dashed border-[#333] text-sm text-white text-center space-y-1.5"
             >
-              <p className="font-semibold text-[#8FA680]">Start your Pinned Ideas board</p>
-              <p className="text-[11px] text-[#9C9A92]">
+              <p className="text-xs font-bold text-white">Start your Pinned Ideas board</p>
+              <p className="text-[11px] text-[#888]">
                 Save kitchen layouts, paint shades, or garden inspiration you love.
               </p>
             </button>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="columns-2 gap-3 space-y-3">
               {savedPins.map((pin) => (
                 <div
                   key={pin.id}
-                  className="rounded-2xl bg-[#1E221E] border border-[#2E332E] overflow-hidden flex flex-col justify-between relative"
+                  className="break-inside-avoid rounded-2xl bg-[#181818] border border-[#262626] overflow-hidden flex flex-col justify-between relative shadow-md"
                 >
                   <button
                     type="button"
                     onClick={() => handleDeleteIdea(pin.id)}
                     title="Remove pin"
-                    className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-black/75 text-white text-xs flex items-center justify-center"
+                    className="absolute top-2.5 right-2.5 z-10 w-7 h-7 rounded-full bg-black/75 text-white text-xs flex items-center justify-center shadow"
                   >
                     ×
                   </button>
 
                   {pin.image_url ? (
-                    <img src={pin.image_url} alt={pin.title} className="w-full h-36 object-cover bg-[#121512]" />
+                    <img src={pin.image_url} alt={pin.title} className="w-full object-cover bg-[#0D0D0D]" />
                   ) : (
-                    <div className="w-full h-24 bg-[#222B22] p-3 flex items-end">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8FA680]">
+                    <div className="w-full h-24 bg-[#141414] p-3.5 flex items-end">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#888]">
                         {pin.category || 'Idea'}
                       </span>
                     </div>
                   )}
 
-                  <div className="p-3 space-y-1.5 flex-1 flex flex-col justify-between">
+                  <div className="p-3.5 space-y-2 flex-1 flex flex-col justify-between">
                     <div>
                       {pin.image_url && pin.category && (
-                        <span className="text-[9px] font-semibold uppercase tracking-wider text-[#8FA680]">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#888]">
                           {pin.category}
                         </span>
                       )}
-                      <p className="text-xs font-semibold text-[#F2EFE9] line-clamp-2">{pin.title}</p>
-                      {pin.notes && <p className="text-[11px] text-[#9C9A92] line-clamp-2 mt-0.5">{pin.notes}</p>}
+                      <p className="text-xs font-bold text-white line-clamp-2">{pin.title}</p>
+                      {pin.notes && <p className="text-[11px] text-[#888] line-clamp-2 pt-1">{pin.notes}</p>}
                     </div>
 
                     {pin.source_url && (
@@ -630,7 +662,7 @@ export default function VisualProfilePage() {
                         href={pin.source_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-block text-[11px] font-medium text-[#C6A467] underline pt-1"
+                        className="inline-block text-[11px] font-semibold text-white underline pt-1"
                       >
                         Open Link →
                       </a>
@@ -646,28 +678,28 @@ export default function VisualProfilePage() {
       {/* Lightbox Modal */}
       {selectedPost && (
         <div
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-xs flex items-center justify-center p-4"
           onClick={() => setSelectedPost(null)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl bg-[#1E221E] border border-[#323832] overflow-hidden shadow-2xl space-y-3"
+            className="w-full max-w-md rounded-2xl bg-[#181818] border border-[#262626] overflow-hidden shadow-2xl space-y-3.5"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-4 py-3 flex items-center justify-between border-b border-[#2C322C]">
+            <div className="px-4 py-3.5 flex items-center justify-between border-b border-[#262626]">
               <div>
-                <p className="text-xs font-semibold text-[#F2EFE9]">{getRoomName(selectedPost.room_id)}</p>
+                <p className="text-xs font-bold text-white">{getRoomName(selectedPost.room_id)}</p>
                 {selectedPost.stage && (
-                  <p className="text-[10px] text-[#8FA680] font-medium">{selectedPost.stage}</p>
+                  <p className="text-[11px] text-[#888] font-medium">{selectedPost.stage}</p>
                 )}
               </div>
               <div className="flex items-center gap-3">
-                <Link href="/timeline" className="text-xs font-medium text-[#C6A467] underline">
+                <Link href="/timeline" className="text-xs font-semibold text-white underline">
                   Edit in Logbook
                 </Link>
                 <button
                   type="button"
                   onClick={() => setSelectedPost(null)}
-                  className="w-7 h-7 rounded-full bg-[#2A302A] text-[#F2EFE9] flex items-center justify-center text-sm"
+                  className="w-8 h-8 rounded-full bg-[#262626] text-white flex items-center justify-center text-base"
                 >
                   ×
                 </button>
@@ -677,19 +709,19 @@ export default function VisualProfilePage() {
             {selectedPost.image_url && (
               <div className="bg-black">
                 {selectedPost.media_type === 'video' ? (
-                  <video src={selectedPost.image_url} controls autoPlay playsInline className="w-full max-h-96" />
+                  <video src={selectedPost.image_url} controls autoPlay playsInline className="w-full max-h-[75vh]" />
                 ) : (
-                  <img src={selectedPost.image_url} alt="" className="w-full max-h-96 object-contain mx-auto" />
+                  <img src={selectedPost.image_url} alt="" className="w-full max-h-[75vh] object-contain mx-auto" />
                 )}
               </div>
             )}
 
-            <div className="px-4 pb-4 space-y-2">
-              {selectedPost.caption && <p className="text-xs text-[#E5E2DA] leading-relaxed">{selectedPost.caption}</p>}
+            <div className="px-4 pb-5 space-y-2.5">
+              {selectedPost.caption && <p className="text-xs text-[#DDD] leading-relaxed">{selectedPost.caption}</p>}
               {selectedPost.specs && selectedPost.specs.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-1">
+                <div className="flex flex-wrap gap-2 pt-1">
                   {selectedPost.specs.map((s, i) => (
-                    <span key={i} className="text-[10px] px-2 py-0.5 rounded bg-[#253025] text-[#8FA680] font-medium">
+                    <span key={i} className="text-[11px] px-2.5 py-1 rounded bg-[#222] text-[#CCC] font-semibold">
                       {s}
                     </span>
                   ))}
@@ -703,7 +735,7 @@ export default function VisualProfilePage() {
       {/* Full-Screen 24h Story Viewer */}
       {storyIndex !== null && activeStories[storyIndex] && (
         <div
-          className="fixed inset-0 z-50 bg-black text-white flex flex-col justify-between p-4"
+          className="fixed inset-0 z-50 bg-black text-white flex flex-col justify-between p-5"
           onClick={() =>
             storyIndex + 1 < activeStories.length ? setStoryIndex(storyIndex + 1) : setStoryIndex(null)
           }
@@ -712,12 +744,12 @@ export default function VisualProfilePage() {
             <div className="flex gap-1">
               {activeStories.map((_, idx) => (
                 <div key={idx} className="h-1 flex-1 rounded-full bg-white/25 overflow-hidden">
-                  <div className={`h-full bg-[#8FA680] ${idx <= storyIndex ? 'w-full' : 'w-0'}`} />
+                  <div className={`h-full bg-white ${idx <= storyIndex ? 'w-full' : 'w-0'}`} />
                 </div>
               ))}
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold">
+              <span className="font-bold">
                 {getRoomName(activeStories[storyIndex].room_id)} · 24h Story
               </span>
               <button
@@ -726,7 +758,7 @@ export default function VisualProfilePage() {
                   e.stopPropagation()
                   setStoryIndex(null)
                 }}
-                className="px-2.5 py-1 rounded-full bg-white/15 text-white"
+                className="px-3 py-1.5 rounded-full bg-white/15 text-white text-xs font-semibold"
               >
                 Close ×
               </button>
@@ -750,12 +782,12 @@ export default function VisualProfilePage() {
                 />
               )
             ) : (
-              <p className="text-lg font-medium text-center px-6">{activeStories[storyIndex].caption}</p>
+              <p className="text-lg font-bold text-center px-6">{activeStories[storyIndex].caption}</p>
             )}
           </div>
 
           {activeStories[storyIndex].caption && activeStories[storyIndex].image_url && (
-            <p className="text-center text-sm bg-black/65 px-4 py-2.5 rounded-2xl">
+            <p className="text-center text-xs bg-black/80 px-5 py-3 rounded-2xl font-medium">
               {activeStories[storyIndex].caption}
             </p>
           )}
@@ -765,33 +797,33 @@ export default function VisualProfilePage() {
       {/* Modal: Pin New Idea */}
       {showPinIdeaModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
           onClick={() => setShowPinIdeaModal(false)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl bg-[#1E221E] border border-[#343B34] p-5 space-y-3.5 shadow-2xl"
+            className="w-full max-w-sm rounded-2xl bg-[#181818] border border-[#333] p-5 space-y-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-[#F2EFE9]">Pin an Inspiration Idea</h2>
-              <button type="button" onClick={() => setShowPinIdeaModal(false)} className="text-[#9C9A92] text-lg">
+              <h2 className="text-sm font-bold text-white">Pin an Inspiration Idea</h2>
+              <button type="button" onClick={() => setShowPinIdeaModal(false)} className="text-[#888] text-xl">
                 ×
               </button>
             </div>
 
-            <form onSubmit={handleCreateIdea} className="space-y-3">
+            <form onSubmit={handleCreateIdea} className="space-y-3.5">
               <input
                 type="text"
                 required
-                placeholder="Idea title (e.g., Sage Shaker Kitchen Island)"
+                placeholder="Idea title (e.g., Shaker Kitchen Island)"
                 value={newIdea.title}
                 onChange={(e) => setNewIdea({ ...newIdea, title: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl"
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
               />
               <select
                 value={newIdea.category}
                 onChange={(e) => setNewIdea({ ...newIdea, category: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] border border-[#323832] rounded-xl"
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white border border-[#262626] rounded-xl"
               >
                 <option value="Interior Look">Interior Look</option>
                 <option value="Exterior & Garden">Exterior & Garden</option>
@@ -799,7 +831,7 @@ export default function VisualProfilePage() {
                 <option value="Bathroom">Bathroom</option>
                 <option value="Paint & Materials">Paint & Materials</option>
               </select>
-              <label className="block cursor-pointer px-3 py-2.5 text-xs bg-[#141714] border border-dashed border-[#495B42] rounded-xl text-[#9C9A92]">
+              <label className="block cursor-pointer px-3.5 py-3 text-xs bg-[#111] border border-dashed border-[#333] rounded-xl text-[#888]">
                 {ideaFile ? `Selected: ${ideaFile.name}` : '+ Attach inspiration screenshot (optional)'}
                 <input
                   type="file"
@@ -813,19 +845,19 @@ export default function VisualProfilePage() {
                 placeholder="Source link (optional https://...)"
                 value={newIdea.source_url}
                 onChange={(e) => setNewIdea({ ...newIdea, source_url: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl"
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
               />
               <textarea
                 rows={2}
                 placeholder="Why you like it..."
                 value={newIdea.notes}
                 onChange={(e) => setNewIdea({ ...newIdea, notes: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl resize-none"
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl resize-none"
               />
               <button
                 type="submit"
                 disabled={pinningIdea}
-                className="w-full py-2.5 bg-[#8FA680] text-[#121612] text-xs font-semibold rounded-xl"
+                className="w-full py-3 bg-white text-black text-xs font-bold rounded-xl shadow-sm hover:bg-[#E0E0E0]"
               >
                 {pinningIdea ? 'Pinning...' : 'Save to Pinned Ideas'}
               </button>
@@ -837,48 +869,48 @@ export default function VisualProfilePage() {
       {/* Modal: Pin Product Spec */}
       {showPinProductModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-4"
           onClick={() => setShowPinProductModal(false)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl bg-[#1E221E] border border-[#343B34] p-5 space-y-3.5 shadow-2xl"
+            className="w-full max-w-sm rounded-2xl bg-[#181818] border border-[#333] p-5 space-y-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-[#F2EFE9]">Pin Paint or Product Spec</h2>
-              <button type="button" onClick={() => setShowPinProductModal(false)} className="text-[#9C9A92] text-lg">
+              <h2 className="text-sm font-bold text-white">Pin Paint or Product Spec</h2>
+              <button type="button" onClick={() => setShowPinProductModal(false)} className="text-[#888] text-xl">
                 ×
               </button>
             </div>
-            <form onSubmit={handleAddPinnedProduct} className="space-y-2.5">
+            <form onSubmit={handleAddPinnedProduct} className="space-y-3">
               <input
                 type="text"
                 required
                 placeholder="Product / Paint name"
                 value={newProduct.name}
                 onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl"
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
               />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 <input
                   type="text"
                   placeholder="Brand"
                   value={newProduct.brand}
                   onChange={(e) => setNewProduct({ ...newProduct, brand: e.target.value })}
-                  className="px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl"
+                  className="px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
                 />
                 <input
                   type="text"
                   placeholder="Price (e.g. £56)"
                   value={newProduct.price}
                   onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-                  className="px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] placeholder-[#6B6962] border border-[#323832] rounded-xl"
+                  className="px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl"
                 />
               </div>
               <select
                 value={newProduct.room}
                 onChange={(e) => setNewProduct({ ...newProduct, room: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-[#141714] text-[#F2EFE9] border border-[#323832] rounded-xl"
+                className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white border border-[#262626] rounded-xl"
               >
                 <option value="">Whole House</option>
                 {rooms.map((r) => (
@@ -890,7 +922,7 @@ export default function VisualProfilePage() {
               <button
                 type="submit"
                 disabled={pinningProduct}
-                className="w-full py-2.5 bg-[#8FA680] text-[#121612] text-xs font-semibold rounded-xl"
+                className="w-full py-3 bg-white text-black text-xs font-bold rounded-xl shadow-sm hover:bg-[#E0E0E0]"
               >
                 {pinningProduct ? 'Saving...' : 'Pin Spec'}
               </button>
