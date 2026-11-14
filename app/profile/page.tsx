@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -76,6 +76,12 @@ export default function VisualProfilePage() {
   const [houseTitle, setHouseTitle] = useState('The 1930s Semi')
   const [houseEra, setHouseEra] = useState('1930s Semi-Detached')
 
+  // Avatar & Story Menu State
+  const [showAvatarMenu, setShowAvatarMenu] = useState(false)
+  const avatarMenuRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+
   // Social Stats & Modal State
   const [followersCount, setFollowersCount] = useState(0)
   const [followingCount, setFollowingCount] = useState(0)
@@ -101,6 +107,17 @@ export default function VisualProfilePage() {
   const [showPinProductModal, setShowPinProductModal] = useState(false)
   const [pinningProduct, setPinningProduct] = useState(false)
   const [newProduct, setNewProduct] = useState({ name: '', brand: '', price: '', room: '', url: '' })
+
+  // Close avatar menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (avatarMenuRef.current && !avatarMenuRef.current.contains(e.target as Node)) {
+        setShowAvatarMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const fetchRooms = async () => {
     const { data: roomData } = await supabase
@@ -175,6 +192,38 @@ export default function VisualProfilePage() {
     }
     loadProfileData()
   }, [router])
+
+  // Handle Avatar Image Upload
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+    setUploadingAvatar(true)
+    setShowAvatarMenu(false)
+
+    const ext = file.name.split('.').pop() || 'jpg'
+    const path = `avatars/${user.id}-${Date.now()}.${ext}`
+
+    const { error: uploadErr } = await supabase.storage.from('post-images').upload(path, file)
+    if (uploadErr) {
+      alert('Error uploading avatar: ' + uploadErr.message)
+      setUploadingAvatar(false)
+      return
+    }
+
+    const { data } = supabase.storage.from('post-images').getPublicUrl(path)
+    const newAvatarUrl = data.publicUrl
+
+    const { error: updateErr } = await supabase
+      .from('houses')
+      .upsert({ user_id: user.id, avatar_url: newAvatarUrl }, { onConflict: 'user_id' })
+
+    setUploadingAvatar(false)
+    if (!updateErr) {
+      setAvatarUrl(newAvatarUrl)
+    } else {
+      alert('Error updating profile picture: ' + updateErr.message)
+    }
+  }
 
   const openSocialModal = async (type: 'followers' | 'following') => {
     if (!user) return
@@ -330,32 +379,89 @@ export default function VisualProfilePage() {
         </div>
 
         <div className="flex items-center gap-5">
-          <button
-            type="button"
-            onClick={() => hasStories && setStoryIndex(0)}
-            className={`relative shrink-0 rounded-full p-0.5 transition-transform ${
-              hasStories
-                ? 'bg-gradient-to-tr from-cyan-500 via-purple-500 to-pink-500 cursor-pointer active:scale-95 animate-rgb'
-                : 'bg-transparent cursor-default'
-            }`}
-          >
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt={ownerNames || handle}
-                className="w-24 h-24 rounded-full object-cover border-2 border-[#111]"
-              />
-            ) : (
-              <div className="w-24 h-24 rounded-full bg-[#1E1E1E] text-white flex items-center justify-center text-3xl font-bold tracking-tight border-2 border-[#111]">
-                {displayInitial}
+          {/* Hidden File Input for Avatar */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleAvatarChange}
+            accept="image/*"
+            className="hidden"
+          />
+
+          {/* Profile Picture with Clickable Menu */}
+          <div className="relative" ref={avatarMenuRef}>
+            <button
+              type="button"
+              onClick={() => setShowAvatarMenu(!showAvatarMenu)}
+              className={`relative shrink-0 rounded-full p-0.5 transition-transform cursor-pointer ${
+                hasStories
+                  ? 'bg-gradient-to-tr from-cyan-500 via-purple-500 to-pink-500 active:scale-95 animate-rgb'
+                  : 'bg-[#333]'
+              }`}
+            >
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={ownerNames || handle}
+                  className="w-24 h-24 rounded-full object-cover border-2 border-[#111]"
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-[#1E1E1E] text-white flex items-center justify-center text-3xl font-bold tracking-tight border-2 border-[#111]">
+                  {displayInitial}
+                </div>
+              )}
+              {uploadingAvatar && (
+                <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center text-[10px] font-bold text-white">
+                  Saving...
+                </div>
+              )}
+            </button>
+
+            {hasStories && (
+              <button
+                type="button"
+                onClick={() => setStoryIndex(0)}
+                className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-[#111] shadow"
+              >
+                {activeStories.length} Story
+              </button>
+            )}
+
+            {/* Profile Picture Popup Menu */}
+            {showAvatarMenu && (
+              <div className="absolute left-0 mt-2 w-48 rounded-2xl bg-[#1A1A1A] border border-[#333] shadow-2xl py-1.5 z-50 text-white">
+                {hasStories && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAvatarMenu(false)
+                      setStoryIndex(0)
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-xs font-semibold text-[#CCC] hover:bg-[#262626] hover:text-white transition-colors"
+                  >
+                    👁 View Active Story
+                  </button>
+                )}
+                <Link
+                  href="/upload"
+                  onClick={() => setShowAvatarMenu(false)}
+                  className="block w-full text-left px-4 py-2.5 text-xs font-semibold text-[#CCC] hover:bg-[#262626] hover:text-white transition-colors border-t border-[#222]"
+                >
+                  + Post a 24h Story
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAvatarMenu(false)
+                    fileInputRef.current?.click()
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-xs font-semibold text-cyan-400 hover:bg-[#262626] transition-colors border-t border-[#222]"
+                >
+                  📷 Change Profile Photo
+                </button>
               </div>
             )}
-            {hasStories && (
-              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-[#111]">
-                {activeStories.length} Story
-              </span>
-            )}
-          </button>
+          </div>
 
           <div className="space-y-1 min-w-0">
             <h1 className="text-xl font-bold tracking-tight text-white truncate leading-tight">
