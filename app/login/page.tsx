@@ -10,27 +10,40 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
+  const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null)
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setMessage(null)
 
+    // Enforce strong password requirements on Sign Up
     if (isSignUp) {
-      const { error } = await supabase.auth.signUp({ email, password })
-      setLoading(false)
-      if (error) {
-        setMessage(error.message)
-      } else {
-        setMessage('Account created! Check your email or sign in now.')
-        setIsSignUp(false)
+      const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{10,}$/
+      if (!strongPasswordRegex.test(password)) {
+        setLoading(false)
+        setMessage({
+          text: 'Password must be at least 10 characters and include an uppercase letter, lowercase letter, number, and symbol.',
+          isError: true,
+        })
+        return
       }
+    }
+
+    const { error } = isSignUp
+      ? await supabase.auth.signUp({ email, password })
+      : await supabase.auth.signInWithPassword({ email, password })
+
+    setLoading(false)
+
+    if (error) {
+      setMessage({ text: error.message, isError: true })
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      setLoading(false)
-      if (error) {
-        setMessage(error.message)
+      if (isSignUp) {
+        setMessage({
+          text: 'Account created! If email confirmation is enabled in Supabase, check your inbox (or turn off email confirmation in Supabase Auth settings for instant local testing).',
+          isError: false,
+        })
       } else {
         router.push('/feed')
         router.refresh()
@@ -64,7 +77,7 @@ export default function LoginPage() {
             <input
               type="password"
               required
-              placeholder="••••••••"
+              placeholder={isSignUp ? 'Min 10 chars, upper, lower, num & symbol' : '••••••••'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3.5 py-2.5 text-xs bg-[#111] text-white placeholder-[#666] border border-[#262626] rounded-xl focus:outline-none focus:border-white"
@@ -72,8 +85,8 @@ export default function LoginPage() {
           </div>
 
           {message && (
-            <p className="text-xs text-amber-400 bg-amber-950/30 border border-amber-900/50 rounded-xl px-3 py-2">
-              {message}
+            <p className={`text-xs px-3 py-2 rounded-xl border ${message.isError ? 'text-red-400 bg-red-950/30 border-red-900/50' : 'text-cyan-400 bg-cyan-950/30 border-cyan-900/50'}`}>
+              {message.text}
             </p>
           )}
 
