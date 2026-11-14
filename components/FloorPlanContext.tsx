@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, createContext, useContext } from 'react'
-import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 
 interface FloorPlanContextType {
@@ -27,7 +26,6 @@ export function useFloorPlan() {
   return useContext(FloorPlanContext)
 }
 
-// Updated to accept arguments from AIFloorPlan.tsx without type errors
 export function useFloorPlanJob() {
   const [jobStatus, setJobStatus] = useState<string | null>(null)
   const [jobResult, setJobResult] = useState<any>(null)
@@ -59,14 +57,13 @@ export function useFloorPlanJob() {
 }
 
 export function BottomNav() {
-  const [mounted, setMounted] = useState(false)
-  const pathname = usePathname()
+  const [pathname, setPathname] = useState('')
 
   useEffect(() => {
-    setMounted(true)
+    setPathname(window.location.pathname)
   }, [])
 
-  if (!mounted || pathname === '/login') return null
+  if (pathname === '/login') return null
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#161A16]/90 backdrop-blur-md border-t border-[#2A332A] px-6 py-3 flex justify-around items-center text-xs text-[#9C9A92]">
